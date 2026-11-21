@@ -1,0 +1,6 @@
+{
+  "name": "KHURAI! The Mongolian Archery Adventure",
+  "description": "A vibrant, kid-friendly 2D Mongolian National Archery (Sur Kharvaa) game set at the Naadam Festival.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

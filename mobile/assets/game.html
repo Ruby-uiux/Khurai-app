@@ -1,0 +1,3026 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>KHURAI! The Mongolian Archery Adventure</title>
+  <meta name="description" content="A vibrant, kid-friendly 2D Mongolian National Archery (Sur Kharvaa) game set at the Naadam Festival." />
+  <meta property="og:title" content="KHURAI! The Mongolian Archery Adventure" />
+  <meta property="og:description" content="Aim your composite recurve bow, read the steppe wind flags, knock down the leather surs, and hear the Uuchin cheer KHURAI!" />
+  <meta property="og:type" content="website" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <style>
+    :root {
+      --sky-deep: #1e4b8f;
+      --gold: #e8a317;
+      --gold-bright: #fbbf24;
+      --crimson: #b91c1c;
+      --steppe-green: #2d6a3e;
+      --parchment: #fdfaf2;
+      --parchment-border: #e4d8be;
+      --ink: #1e293b;
+      --ink-muted: #526071;
+      --hud-bg: rgba(253, 250, 242, 0.94);
+    }
+
+    * {
+      box-sizing: border-box;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: #173a6e;
+      color: var(--ink);
+      font-family: "Trebuchet MS", "Avenir Next", "Segoe UI", system-ui, sans-serif;
+    }
+
+    .app-shell {
+      display: flex;
+      flex-direction: column;
+      width: 100%;
+      height: 100%;
+      position: relative;
+    }
+
+    /* Top HUD Bar */
+    .hud-bar {
+      height: 58px;
+      min-height: 58px;
+      background: var(--hud-bg);
+      border-bottom: 2px solid var(--parchment-border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 0 18px;
+      z-index: 20;
+      box-shadow: 0 2px 10px rgba(15, 23, 42, 0.08);
+    }
+
+    .hud-brand {
+      display: flex;
+      align-items: baseline;
+      gap: 10px;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+
+    .brand-title {
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: 22px;
+      font-weight: 800;
+      letter-spacing: 0.03em;
+      color: var(--crimson);
+      margin: 0;
+    }
+
+    .brand-sep {
+      color: #b4a382;
+      font-weight: 600;
+    }
+
+    .mode-readout {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--ink-muted);
+      white-space: nowrap;
+    }
+
+    .hud-stats {
+      display: flex;
+      align-items: center;
+      gap: 18px;
+      font-size: 14px;
+      font-weight: 700;
+      font-variant-numeric: tabular-nums;
+      white-space: nowrap;
+    }
+
+    .stat-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      color: var(--ink);
+    }
+
+    .stat-label {
+      color: var(--ink-muted);
+      font-weight: 600;
+    }
+
+    .arrow-quiver {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .quiver-pip {
+      width: 18px;
+      height: 18px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      transition: opacity 180ms ease, transform 180ms ease;
+    }
+
+    .quiver-pip.spent {
+      opacity: 0.22;
+      transform: scale(0.85);
+    }
+
+    .mergen-tag {
+      color: #92400e;
+      font-weight: 800;
+      font-size: 13px;
+      letter-spacing: 0.02em;
+    }
+
+    .hud-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+
+    .btn {
+      appearance: none;
+      border: 1px solid var(--parchment-border);
+      background: #ffffff;
+      color: var(--ink);
+      font-family: inherit;
+      font-size: 13px;
+      font-weight: 700;
+      padding: 8px 14px;
+      min-height: 40px;
+      border-radius: 10px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      white-space: nowrap;
+      transition: background-color 150ms ease, transform 120ms ease, border-color 150ms ease;
+    }
+
+    .btn:hover {
+      background: #f6efe0;
+      border-color: #cdb98e;
+    }
+
+    .btn:active {
+      transform: translateY(1px);
+    }
+
+    .btn:focus-visible {
+      outline: 3px solid var(--gold);
+      outline-offset: 2px;
+    }
+
+    .btn-primary {
+      background: var(--crimson);
+      color: #ffffff;
+      border-color: #991b1b;
+    }
+
+    .btn-primary:hover {
+      background: #991b1b;
+      border-color: #7f1d1d;
+    }
+
+    .btn-gold {
+      background: var(--gold);
+      color: #1f1605;
+      border-color: #c7850a;
+    }
+
+    .btn-gold:hover {
+      background: #d4900c;
+    }
+
+    /* Game Stage */
+    .stage-wrap {
+      flex: 1;
+      position: relative;
+      overflow: hidden;
+      background: #5ca9e6;
+    }
+
+    canvas#gameCanvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+      touch-action: none;
+      cursor: crosshair;
+    }
+
+    /* Subtle bottom-left control tip during first shot */
+    .aim-hint {
+      position: absolute;
+      bottom: 14px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(15, 23, 42, 0.78);
+      color: #fefce8;
+      padding: 8px 18px;
+      border-radius: 12px;
+      font-size: 14px;
+      font-weight: 700;
+      pointer-events: none;
+      white-space: nowrap;
+      transition: opacity 250ms ease;
+      z-index: 10;
+    }
+
+    .aim-hint.hidden {
+      opacity: 0;
+    }
+
+    /* Modals */
+    .modal-backdrop {
+      position: absolute;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.58);
+      backdrop-filter: blur(4px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      z-index: 30;
+    }
+
+    .modal-backdrop.hidden {
+      display: none;
+    }
+
+    .modal-card {
+      background: var(--parchment);
+      border: 2px solid #d9c7a0;
+      border-radius: 18px;
+      max-width: 760px;
+      width: 100%;
+      max-height: calc(100vh - 36px);
+      overflow-y: auto;
+      padding: 26px 28px;
+      box-shadow: 0 24px 50px rgba(15, 23, 42, 0.32);
+      position: relative;
+    }
+
+    .modal-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 18px;
+    }
+
+    .modal-title {
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: 28px;
+      font-weight: 800;
+      color: var(--crimson);
+      margin: 0 0 4px 0;
+      line-height: 1.15;
+      text-wrap: balance;
+    }
+
+    .modal-subtitle {
+      font-size: 15px;
+      color: var(--ink-muted);
+      margin: 0;
+      line-height: 1.45;
+    }
+
+    .section-heading {
+      font-size: 14px;
+      font-weight: 800;
+      color: var(--ink);
+      margin: 0 0 10px 0;
+      letter-spacing: 0.01em;
+    }
+
+    .setup-grid {
+      display: grid;
+      grid-template-columns: 1.25fr 1fr;
+      gap: 22px;
+      margin-bottom: 20px;
+    }
+
+    .mode-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .mode-option {
+      text-align: left;
+      background: #ffffff;
+      border: 2px solid var(--parchment-border);
+      border-radius: 12px;
+      padding: 12px 14px;
+      cursor: pointer;
+      transition: border-color 150ms ease, background-color 150ms ease, transform 120ms ease;
+      font-family: inherit;
+      width: 100%;
+    }
+
+    .mode-option:hover {
+      border-color: #c2a973;
+      background: #fffcf4;
+    }
+
+    .mode-option.selected {
+      border-color: var(--crimson);
+      background: #fef2f2;
+    }
+
+    .mode-option-title {
+      font-size: 15px;
+      font-weight: 800;
+      color: var(--ink);
+      margin-bottom: 2px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+
+    .mode-option-meta {
+      font-size: 13px;
+      color: var(--ink-muted);
+      font-weight: 600;
+    }
+
+    .customizer-panel {
+      background: #ffffff;
+      border: 1px solid var(--parchment-border);
+      border-radius: 14px;
+      padding: 14px 16px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+    }
+
+    #avatarPreview {
+      width: 144px;
+      height: 144px;
+      border-radius: 12px;
+      background: linear-gradient(180deg, #bae6fd 0%, #dbeafe 65%, #4d9b58 65%, #2d6a3e 100%);
+      border: 1px solid var(--parchment-border);
+    }
+
+    .option-row {
+      width: 100%;
+    }
+
+    .option-row-label {
+      font-size: 12px;
+      font-weight: 800;
+      color: var(--ink-muted);
+      margin-bottom: 6px;
+      display: block;
+    }
+
+    .swatch-group {
+      display: flex;
+      gap: 8px;
+    }
+
+    .swatch-btn {
+      flex: 1;
+      min-height: 40px;
+      border-radius: 10px;
+      border: 2px solid transparent;
+      cursor: pointer;
+      font-family: inherit;
+      font-size: 12px;
+      font-weight: 800;
+      color: #ffffff;
+      padding: 6px 8px;
+      transition: transform 120ms ease, box-shadow 150ms ease;
+    }
+
+    .swatch-btn.selected {
+      border-color: #1e293b;
+      box-shadow: 0 0 0 2px #fbbf24;
+    }
+
+    .style-group {
+      display: flex;
+      gap: 8px;
+    }
+
+    .style-btn {
+      flex: 1;
+      min-height: 40px;
+      border-radius: 10px;
+      border: 2px solid var(--parchment-border);
+      background: #ffffff;
+      color: var(--ink);
+      font-family: inherit;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      padding: 6px 10px;
+    }
+
+    .style-btn.selected {
+      border-color: var(--crimson);
+      background: #fef2f2;
+      color: var(--crimson);
+    }
+
+    .name-input {
+      width: 100%;
+      min-height: 40px;
+      border-radius: 10px;
+      border: 1px solid #cbd5e1;
+      padding: 8px 12px;
+      font-family: inherit;
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--ink);
+      background: #ffffff;
+    }
+
+    .name-input:focus {
+      outline: 3px solid var(--gold);
+      border-color: var(--gold);
+    }
+
+    .modal-footer {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 10px;
+      padding-top: 8px;
+      border-top: 1px solid var(--parchment-border);
+    }
+
+    .btn-lg {
+      padding: 12px 24px;
+      font-size: 16px;
+      min-height: 46px;
+      border-radius: 12px;
+    }
+
+    /* Round Summary & Cultural Card */
+    .summary-hero {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 18px;
+      flex-wrap: wrap;
+    }
+
+    .summary-stats {
+      display: flex;
+      gap: 24px;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .summary-stat-box {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .summary-stat-val {
+      font-size: 28px;
+      font-weight: 800;
+      color: var(--ink);
+      line-height: 1.1;
+    }
+
+    .summary-stat-lbl {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--ink-muted);
+    }
+
+    .mergen-banner {
+      background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+      border: 2px solid #d97706;
+      border-radius: 14px;
+      padding: 14px 16px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      margin-bottom: 18px;
+    }
+
+    .mergen-banner.hidden {
+      display: none;
+    }
+
+    .mergen-badge-icon {
+      width: 52px;
+      height: 52px;
+      flex-shrink: 0;
+    }
+
+    .fact-card {
+      background: #ffffff;
+      border: 1px solid var(--parchment-border);
+      border-radius: 14px;
+      padding: 18px 20px;
+      display: flex;
+      align-items: center;
+      gap: 18px;
+      margin-bottom: 18px;
+    }
+
+    .fact-art {
+      width: 84px;
+      height: 84px;
+      flex-shrink: 0;
+      border-radius: 12px;
+      background: #f8f4e8;
+      border: 1px solid var(--parchment-border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .fact-kicker {
+      font-size: 12px;
+      font-weight: 800;
+      color: #b45309;
+      margin-bottom: 4px;
+    }
+
+    .fact-title {
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: 18px;
+      font-weight: 800;
+      color: var(--ink);
+      margin: 0 0 6px 0;
+    }
+
+    .fact-text {
+      font-size: 15px;
+      line-height: 1.5;
+      color: var(--ink-muted);
+      margin: 0;
+    }
+
+    .help-steps {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 14px;
+      margin-bottom: 18px;
+    }
+
+    .help-step {
+      background: #ffffff;
+      border: 1px solid var(--parchment-border);
+      border-radius: 12px;
+      padding: 14px;
+    }
+
+    .help-step-num {
+      font-size: 13px;
+      font-weight: 800;
+      color: var(--crimson);
+      margin-bottom: 4px;
+    }
+
+    .help-step-title {
+      font-size: 16px;
+      font-weight: 800;
+      color: var(--ink);
+      margin: 0 0 6px 0;
+    }
+
+    .help-step-desc {
+      font-size: 13px;
+      line-height: 1.45;
+      color: var(--ink-muted);
+      margin: 0;
+    }
+
+    @media (max-width: 900px) {
+      .hud-bar {
+        padding: 0 10px;
+        gap: 8px;
+      }
+      .mode-readout {
+        display: none;
+      }
+      .hud-stats {
+        gap: 10px;
+        font-size: 13px;
+      }
+      .btn {
+        padding: 6px 10px;
+        font-size: 12px;
+      }
+      .setup-grid {
+        grid-template-columns: 1fr;
+      }
+      .help-steps {
+        grid-template-columns: 1fr;
+      }
+      .fact-card {
+        flex-direction: column;
+        text-align: center;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      * {
+        transition-duration: 0.01ms !important;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app-shell">
+    <!-- Top HUD -->
+    <header class="hud-bar">
+      <div class="hud-brand">
+        <h1 class="brand-title">KHURAI!</h1>
+        <span class="brand-sep" aria-hidden="true">·</span>
+        <span id="hudModeLabel" class="mode-readout">Beginner · 25m · 10 Surs</span>
+      </div>
+
+      <div class="hud-stats">
+        <div class="stat-item">
+          <span class="stat-label">Round</span>
+          <span id="hudRound">1</span>
+        </div>
+        <span class="brand-sep" aria-hidden="true">·</span>
+        <div class="stat-item">
+          <span class="stat-label">Surs Hit</span>
+          <span id="hudScore">0</span>
+        </div>
+        <span class="brand-sep" aria-hidden="true">·</span>
+        <div class="stat-item" aria-label="Arrows remaining">
+          <span class="stat-label">Arrows</span>
+          <div id="hudArrows" class="arrow-quiver"></div>
+        </div>
+        <span class="brand-sep" aria-hidden="true">·</span>
+        <div class="stat-item">
+          <span class="stat-label">Wind</span>
+          <span id="hudWind">Calm</span>
+        </div>
+        <span id="hudMergenBadge" class="mergen-tag" style="display:none;">· Mergen x0</span>
+      </div>
+
+      <div class="hud-actions">
+        <button id="btnCustomize" type="button" class="btn">Archer &amp; Mode</button>
+        <button id="btnHelp" type="button" class="btn">Rules</button>
+        <button id="btnMute" type="button" class="btn" aria-pressed="false">Sound On</button>
+      </div>
+    </header>
+
+    <!-- Canvas Arena -->
+    <main class="stage-wrap">
+      <canvas id="gameCanvas" tabindex="0" aria-label="Mongolian National Archery range. Click and drag downward to draw the bow, move left and right to aim across the surs, and release to shoot."></canvas>
+      <div id="aimHint" class="aim-hint">Click or tap anywhere, pull back to draw your bow, move left/right to aim, and release to shoot!</div>
+
+      <!-- Title & Customization Modal -->
+      <div id="setupModal" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="setupTitle">
+        <div class="modal-card">
+          <div class="modal-header">
+            <div>
+              <h2 id="setupTitle" class="modal-title">KHURAI! The Mongolian Archery Adventure</h2>
+              <p class="modal-subtitle">Welcome to the Naadam Festival! Knock the leather <strong>surs</strong> clean out of the line with your traditional composite bow.</p>
+            </div>
+          </div>
+
+          <div class="setup-grid">
+            <div>
+              <h3 class="section-heading">1. Choose Your Festival Mode</h3>
+              <div class="mode-list" id="modeList">
+                <button type="button" class="mode-option selected" data-mode="beginner">
+                  <div class="mode-option-title">
+                    <span>Beginner (Kids' Practice)</span>
+                    <span>10 Surs · 25m</span>
+                  </div>
+                  <div class="mode-option-meta">Big targets, gentle steppe breeze, clear aim arc</div>
+                </button>
+                <button type="button" class="mode-option" data-mode="women">
+                  <div class="mode-option-title">
+                    <span>Khalkh Women's Style</span>
+                    <span>20 Surs · 60m</span>
+                  </div>
+                  <div class="mode-option-meta">Authentic 60m range, shifting wind, fading aim arc</div>
+                </button>
+                <button type="button" class="mode-option" data-mode="men">
+                  <div class="mode-option-title">
+                    <span>Khalkh Men's Style</span>
+                    <span>33 Surs · 75m</span>
+                  </div>
+                  <div class="mode-option-meta">Full 75m championship line, strong wind, pure skill</div>
+                </button>
+              </div>
+            </div>
+
+            <div>
+              <h3 class="section-heading">2. Customize Your Archer</h3>
+              <div class="customizer-panel">
+                <canvas id="avatarPreview" width="144" height="144"></canvas>
+                <div class="option-row">
+                  <label class="option-row-label" for="archerNameInput">Archer Name</label>
+                  <input id="archerNameInput" class="name-input" type="text" maxlength="16" value="Temüülen" placeholder="Enter your name" />
+                </div>
+                <div class="option-row">
+                  <span class="option-row-label">Traditional Deel Color</span>
+                  <div class="swatch-group" id="deelColors">
+                    <button type="button" class="swatch-btn selected" data-color="blue" style="background:#1d4ed8;">Royal Blue</button>
+                    <button type="button" class="swatch-btn" data-color="red" style="background:#b91c1c;">Crimson</button>
+                    <button type="button" class="swatch-btn" data-color="gold" style="background:#d97706;">Gold</button>
+                  </div>
+                </div>
+                <div class="option-row">
+                  <span class="option-row-label">Headwear &amp; Style</span>
+                  <div class="style-group" id="archerStyles">
+                    <button type="button" class="style-btn selected" data-style="malgai">Malgai Hat</button>
+                    <button type="button" class="style-btn" data-style="braids">Festival Braids</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="modal-footer">
+            <button id="btnStartGame" type="button" class="btn btn-primary btn-lg">Enter the Naadam Field</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Round Summary & Did You Know Modal -->
+      <div id="summaryModal" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="summaryTitle">
+        <div class="modal-card">
+          <div class="modal-header">
+            <div>
+              <h2 id="summaryTitle" class="modal-title">Round Complete!</h2>
+              <p id="summarySubtitle" class="modal-subtitle">Great shooting on the Mongolian steppe!</p>
+            </div>
+          </div>
+
+          <div id="mergenBanner" class="mergen-banner hidden">
+            <svg class="mergen-badge-icon" viewBox="0 0 64 64" aria-hidden="true">
+              <circle cx="32" cy="32" r="29" fill="#f59e0b" stroke="#92400e" stroke-width="3"/>
+              <circle cx="32" cy="32" r="22" fill="#fef3c7" stroke="#b45309" stroke-width="2"/>
+              <path d="M32 14 L36 25 L48 25 L38 32 L42 44 L32 37 L22 44 L26 32 L16 25 L28 25 Z" fill="#b91c1c"/>
+            </svg>
+            <div>
+              <div style="font-size:18px;font-weight:800;color:#78350f;">Honorary Title Unlocked: MERGEN!</div>
+              <div style="font-size:14px;font-weight:600;color:#92400e;">You knocked down all 4 surs in a single round — true "Wise Marksman" mastery!</div>
+            </div>
+          </div>
+
+          <div class="summary-hero">
+            <div class="summary-stats">
+              <div class="summary-stat-box">
+                <span id="sumRoundHits" class="summary-stat-val">0 / 4</span>
+                <span class="summary-stat-lbl">Round Hits</span>
+              </div>
+              <div class="summary-stat-box">
+                <span id="sumTotalScore" class="summary-stat-val">0</span>
+                <span class="summary-stat-lbl">Total Surs Hit</span>
+              </div>
+              <div class="summary-stat-box">
+                <span id="sumRemaining" class="summary-stat-val">10</span>
+                <span class="summary-stat-lbl">Surs Left in Line</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="fact-card">
+            <div id="factArt" class="fact-art" aria-hidden="true"></div>
+            <div>
+              <div class="fact-kicker">Did You Know? · Mongolian Archery Fact</div>
+              <h3 id="factTitle" class="fact-title">Horn, Wood &amp; Sinew</h3>
+              <p id="factText" class="fact-text"></p>
+            </div>
+          </div>
+
+          <div class="modal-footer">
+            <button id="btnSummarySetup" type="button" class="btn">Switch Mode / Archer</button>
+            <button id="btnNextRound" type="button" class="btn btn-primary btn-lg">Next Round (4 Arrows)</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- How to Play Modal -->
+      <div id="helpModal" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="helpTitle">
+        <div class="modal-card">
+          <div class="modal-header">
+            <div>
+              <h2 id="helpTitle" class="modal-title">How to Play Sur Kharvaa</h2>
+              <p class="modal-subtitle">Master the traditional sightless Mongolian composite bow in three easy steps.</p>
+            </div>
+          </div>
+
+          <div class="help-steps">
+            <div class="help-step">
+              <div class="help-step-num">Step 1</div>
+              <h3 class="help-step-title">Pull Back to Draw</h3>
+              <p class="help-step-desc">Click or tap anywhere on the field and drag downward to bend the composite bow and build power.</p>
+            </div>
+            <div class="help-step">
+              <div class="help-step-num">Step 2</div>
+              <h3 class="help-step-title">Aim Low &amp; Across</h3>
+              <p class="help-step-desc">Move left or right to line up with a leather <strong>sur</strong>. Adjust how far down you pull to raise or flatten your arc!</p>
+            </div>
+            <div class="help-step">
+              <div class="help-step-num">Step 3</div>
+              <h3 class="help-step-title">Read the Khadag Flags</h3>
+              <p class="help-step-desc">No sights allowed! Watch the colorful silk prayer flags fluttering in the steppe wind and aim slightly into the breeze.</p>
+            </div>
+          </div>
+
+          <p style="font-size:13px;color:#526071;margin:0 0 16px 0;">
+            <strong>Keyboard option:</strong> Use Left/Right arrows to aim, Up/Down to adjust power &amp; arc, and hold/release Spacebar to shoot.
+          </p>
+
+          <div class="modal-footer">
+            <button id="btnCloseHelp" type="button" class="btn btn-primary btn-lg">Back to the Range</button>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    (() => {
+      'use strict';
+
+      // ============================================================
+      // 1. CULTURAL FACTS & MODE DEFINITIONS
+      // ============================================================
+      const MODES = {
+        beginner: {
+          id: 'beginner',
+          label: 'Beginner',
+          shortLabel: "Beginner · 25m · 10 Surs",
+          surCount: 10,
+          distance: 25,
+          maxSpeed: 48,
+          windMax: 2.2,
+          previewRatio: 0.85,
+          previewOpacity: 0.85,
+          surWidthMeters: 0.56,
+          surGapMeters: 0.24,
+          surHeightMeters: 0.44,
+          rowSpanRatio: 0.48
+        },
+        women: {
+          id: 'women',
+          label: "Khalkh Women's",
+          shortLabel: "Khalkh Women's · 60m · 20 Surs",
+          surCount: 20,
+          distance: 60,
+          maxSpeed: 68,
+          windMax: 4.4,
+          previewRatio: 0.56,
+          previewOpacity: 0.65,
+          surWidthMeters: 0.48,
+          surGapMeters: 0.18,
+          surHeightMeters: 0.40,
+          rowSpanRatio: 0.62
+        },
+        men: {
+          id: 'men',
+          label: "Khalkh Men's",
+          shortLabel: "Khalkh Men's · 75m · 33 Surs",
+          surCount: 33,
+          distance: 75,
+          maxSpeed: 78,
+          windMax: 6.4,
+          previewRatio: 0.36,
+          previewOpacity: 0.50,
+          surWidthMeters: 0.42,
+          surGapMeters: 0.14,
+          surHeightMeters: 0.38,
+          rowSpanRatio: 0.72
+        }
+      };
+
+      const DEEL_PALETTES = {
+        blue: { name: 'Royal Blue', main: '#1d4ed8', dark: '#1e3a8a', light: '#3b82f6', sash: '#f59e0b', trim: '#fde047' },
+        red:  { name: 'Crimson Red', main: '#b91c1c', dark: '#7f1d1d', light: '#ef4444', sash: '#fbbf24', trim: '#fef08a' },
+        gold: { name: 'Golden Yellow', main: '#d97706', dark: '#92400e', light: '#f59e0b', sash: '#1d4ed8', trim: '#fef3c7' }
+      };
+
+      const CULTURAL_FACTS = [
+        {
+          title: "Wood, Horn & Sinew",
+          text: "Mongolian bows are crafted from flexible birch wood, water buffalo horn on the belly, and animal sinew on the back — giving them springy speed with zero metal or plastic!",
+          icon: "bow"
+        },
+        {
+          title: "Young Archers Start Early",
+          text: "Kids in Mongolia often start learning Sur Kharvaa around age 5 or 6 using special lightweight bows sized just for their arms!",
+          icon: "kid"
+        },
+        {
+          title: "The Joyful 'Khurai!' Chant",
+          text: "When an arrow knocks a sur out of the line, the Uuchin judges raise both arms and sing 'Khurai!' (or 'Uukhai!') — an ancient chant welcoming good fortune!",
+          icon: "uuchin"
+        },
+        {
+          title: "What Is a Sur?",
+          text: "A sur is a small cylinder made of tightly woven leather straps. Archers shoot low, flat arrows across the grass so they strike and tumble the sur cleanly out of the wall!",
+          icon: "sur"
+        },
+        {
+          title: "The Thumb Ring Draw",
+          text: "Unlike Western archers who pull the string with three fingers, Mongolian archers pull with their thumb protected by a carved bone, horn, or silver thumb ring!",
+          icon: "ring"
+        },
+        {
+          title: "Upturned Gutal Boots",
+          text: "Traditional Mongolian gutal boots have curved upturned toes! Long ago, this helped riders keep their boots inside horse stirrups and step gently over the steppe grass.",
+          icon: "boots"
+        },
+        {
+          title: "Three Games of Naadam",
+          text: "Archery (Sur Kharvaa) is one of the Three Manly Games of the summer Naadam Festival, celebrated alongside Mongolian Wrestling and long-distance Horse Racing!",
+          icon: "naadam"
+        },
+        {
+          title: "The Title of 'Mergen'",
+          text: "Knocking down every target earns the revered title 'Mergen', meaning 'Wise Marksman' — one of the highest honors an archer can receive at Naadam!",
+          icon: "mergen"
+        }
+      ];
+
+      function getFactSvg(icon) {
+        switch (icon) {
+          case 'bow':
+            return `<svg width="64" height="64" viewBox="0 0 64 64"><path d="M18 10 C8 22, 12 42, 18 54" fill="none" stroke="#78350f" stroke-width="4" stroke-linecap="round"/><path d="M18 10 C22 14, 24 22, 20 32 C24 42, 22 50, 18 54" fill="none" stroke="#d97706" stroke-width="2"/><line x1="18" y1="10" x2="18" y2="54" stroke="#94a3b8" stroke-width="1.5"/><line x1="14" y1="32" x2="54" y2="32" stroke="#92400e" stroke-width="3"/><polygon points="54,32 46,28 48,32 46,36" fill="#475569"/></svg>`;
+          case 'sur':
+            return `<svg width="64" height="64" viewBox="0 0 64 64"><ellipse cx="32" cy="48" rx="18" ry="6" fill="#94a3b8" opacity="0.35"/><rect x="18" y="20" width="28" height="28" rx="4" fill="#92400e" stroke="#451a03" stroke-width="2"/><rect x="18" y="29" width="28" height="10" fill="#dc2626"/><ellipse cx="32" cy="20" rx="14" ry="5" fill="#b45309" stroke="#451a03" stroke-width="2"/></svg>`;
+          case 'uuchin':
+            return `<svg width="64" height="64" viewBox="0 0 64 64"><circle cx="32" cy="24" r="9" fill="#fed7aa"/><path d="M21 20 L32 7 L43 20 Z" fill="#1d4ed8"/><path d="M18 56 L22 33 L42 33 L46 56 Z" fill="#b91c1c"/><path d="M22 36 L10 18" stroke="#b91c1c" stroke-width="5" stroke-linecap="round"/><path d="M42 36 L54 18" stroke="#b91c1c" stroke-width="5" stroke-linecap="round"/></svg>`;
+          case 'boots':
+            return `<svg width="64" height="64" viewBox="0 0 64 64"><path d="M20 14 L34 14 L34 40 C44 40, 52 36, 52 30 C54 38, 48 48, 34 48 L18 48 Z" fill="#78350f" stroke="#451a03" stroke-width="2"/><path d="M20 20 L34 20" stroke="#fbbf24" stroke-width="3"/></svg>`;
+          case 'mergen':
+            return `<svg width="64" height="64" viewBox="0 0 64 64"><circle cx="32" cy="32" r="24" fill="#fbbf24" stroke="#b45309" stroke-width="3"/><path d="M32 14 L37 26 L50 26 L40 34 L44 46 L32 38 L20 46 L24 34 L14 26 L27 26 Z" fill="#b91c1c"/></svg>`;
+          default:
+            return `<svg width="64" height="64" viewBox="0 0 64 64"><path d="M12 46 Q32 28 52 46 Z" fill="#f8fafc" stroke="#64748b" stroke-width="2"/><rect x="27" y="34" width="10" height="12" fill="#dc2626"/><path d="M32 12 L32 28" stroke="#1d4ed8" stroke-width="3"/><path d="M32 14 L48 19 L32 24 Z" fill="#fbbf24"/></svg>`;
+        }
+      }
+
+      // ============================================================
+      // 2. WEB AUDIO API SYNTHESIZER
+      // ============================================================
+      const AudioFX = (() => {
+        let ctx = null;
+        let muted = false;
+        let lastCreakTime = 0;
+
+        function ensureCtx() {
+          if (muted) return null;
+          if (!ctx) {
+            const AudioCtx = window.AudioContext || window.webkitAudioContext;
+            if (!AudioCtx) return null;
+            ctx = new AudioCtx();
+          }
+          if (ctx.state === 'suspended') {
+            ctx.resume().catch(() => {});
+          }
+          return ctx;
+        }
+
+        function setMuted(m) {
+          muted = m;
+        }
+
+        function isMuted() {
+          return muted;
+        }
+
+        function playCreak(tension) {
+          const c = ensureCtx();
+          if (!c) return;
+          const now = c.currentTime;
+          if (now - lastCreakTime < 0.22) return;
+          lastCreakTime = now;
+          const osc = c.createOscillator();
+          const gain = c.createGain();
+          osc.type = 'triangle';
+          const base = 130 + tension * 95;
+          osc.frequency.setValueAtTime(base, now);
+          osc.frequency.exponentialRampToValueAtTime(base * 1.18, now + 0.08);
+          gain.gain.setValueAtTime(0.001, now);
+          gain.gain.linearRampToValueAtTime(0.045, now + 0.02);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.09);
+          osc.connect(gain);
+          gain.connect(c.destination);
+          osc.start(now);
+          osc.stop(now + 0.1);
+        }
+
+        function playArrowWhoosh(power) {
+          const c = ensureCtx();
+          if (!c) return;
+          const now = c.currentTime;
+
+          // Bowstring twang
+          const twang = c.createOscillator();
+          const twangGain = c.createGain();
+          twang.type = 'triangle';
+          twang.frequency.setValueAtTime(190 + power * 70, now);
+          twang.frequency.exponentialRampToValueAtTime(88, now + 0.16);
+          twangGain.gain.setValueAtTime(0.18, now);
+          twangGain.gain.exponentialRampToValueAtTime(0.001, now + 0.17);
+          twang.connect(twangGain);
+          twangGain.connect(c.destination);
+          twang.start(now);
+          twang.stop(now + 0.18);
+
+          // Air whoosh
+          const len = Math.floor(c.sampleRate * 0.26);
+          const buf = c.createBuffer(1, len, c.sampleRate);
+          const data = buf.getChannelData(0);
+          for (let i = 0; i < len; i++) data[i] = (Math.random() * 2 - 1) * (1 - i / len);
+          const noise = c.createBufferSource();
+          noise.buffer = buf;
+          const filter = c.createBiquadFilter();
+          filter.type = 'bandpass';
+          filter.frequency.setValueAtTime(2100, now);
+          filter.frequency.exponentialRampToValueAtTime(520, now + 0.25);
+          filter.Q.value = 1.6;
+          const nGain = c.createGain();
+          nGain.gain.setValueAtTime(0.16, now);
+          nGain.gain.exponentialRampToValueAtTime(0.001, now + 0.25);
+          noise.connect(filter);
+          filter.connect(nGain);
+          nGain.connect(c.destination);
+          noise.start(now);
+        }
+
+        function playSurHit() {
+          const c = ensureCtx();
+          if (!c) return;
+          const now = c.currentTime;
+
+          // Leather sur thud
+          const osc = c.createOscillator();
+          const gain = c.createGain();
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(165, now);
+          osc.frequency.exponentialRampToValueAtTime(52, now + 0.16);
+          gain.gain.setValueAtTime(0.32, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.18);
+          osc.connect(gain);
+          gain.connect(c.destination);
+          osc.start(now);
+          osc.stop(now + 0.19);
+
+          // Morin Khuur & Khurai pentatonic celebration!
+          const notes = [293.66, 349.23, 392.00, 440.00, 587.33]; // D4 F4 G4 A4 D5
+          notes.forEach((freq, idx) => {
+            const t = now + 0.10 + idx * 0.09;
+            const fiddle = c.createOscillator();
+            const fFilter = c.createBiquadFilter();
+            const fGain = c.createGain();
+            fiddle.type = 'sawtooth';
+            fiddle.frequency.setValueAtTime(freq, t);
+            // Warm horse-head fiddle resonance
+            fFilter.type = 'bandpass';
+            fFilter.frequency.setValueAtTime(freq * 2.2, t);
+            fFilter.Q.value = 2.0;
+            const dur = idx === notes.length - 1 ? 0.48 : 0.14;
+            fGain.gain.setValueAtTime(0.001, t);
+            fGain.gain.linearRampToValueAtTime(0.11, t + 0.03);
+            fGain.gain.exponentialRampToValueAtTime(0.001, t + dur);
+            fiddle.connect(fFilter);
+            fFilter.connect(fGain);
+            fGain.connect(c.destination);
+            fiddle.start(t);
+            fiddle.stop(t + dur + 0.02);
+          });
+
+          // Crowd cheer noise swell
+          const len = Math.floor(c.sampleRate * 0.75);
+          const buf = c.createBuffer(1, len, c.sampleRate);
+          const data = buf.getChannelData(0);
+          for (let i = 0; i < len; i++) {
+            const env = Math.sin((i / len) * Math.PI);
+            data[i] = (Math.random() * 2 - 1) * env;
+          }
+          const cheer = c.createBufferSource();
+          cheer.buffer = buf;
+          const bp = c.createBiquadFilter();
+          bp.type = 'bandpass';
+          bp.frequency.setValueAtTime(950, now + 0.12);
+          bp.Q.value = 0.9;
+          const cGain = c.createGain();
+          cGain.gain.setValueAtTime(0.001, now + 0.12);
+          cGain.gain.linearRampToValueAtTime(0.12, now + 0.30);
+          cGain.gain.exponentialRampToValueAtTime(0.001, now + 0.85);
+          cheer.connect(bp);
+          bp.connect(cGain);
+          cGain.connect(c.destination);
+          cheer.start(now + 0.12);
+        }
+
+        function playGrassThud() {
+          const c = ensureCtx();
+          if (!c) return;
+          const now = c.currentTime;
+          const osc = c.createOscillator();
+          const gain = c.createGain();
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(105, now);
+          osc.frequency.exponentialRampToValueAtTime(40, now + 0.11);
+          gain.gain.setValueAtTime(0.16, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.12);
+          osc.connect(gain);
+          gain.connect(c.destination);
+          osc.start(now);
+          osc.stop(now + 0.13);
+        }
+
+        function playMergenFanfare() {
+          const c = ensureCtx();
+          if (!c) return;
+          const now = c.currentTime;
+          const chord = [293.66, 392.00, 440.00, 523.25, 587.33, 783.99];
+          chord.forEach((freq, i) => {
+            const t = now + i * 0.08;
+            const osc = c.createOscillator();
+            const gain = c.createGain();
+            osc.type = 'triangle';
+            osc.frequency.setValueAtTime(freq, t);
+            gain.gain.setValueAtTime(0.001, t);
+            gain.gain.linearRampToValueAtTime(0.14, t + 0.02);
+            gain.gain.exponentialRampToValueAtTime(0.001, t + 0.65);
+            osc.connect(gain);
+            gain.connect(c.destination);
+            osc.start(t);
+            osc.stop(t + 0.7);
+          });
+        }
+
+        return { setMuted, isMuted, playCreak, playArrowWhoosh, playSurHit, playGrassThud, playMergenFanfare };
+      })();
+
+      // ============================================================
+      // 3. DOM ELEMENTS & GAME STATE
+      // ============================================================
+      const canvas = document.getElementById('gameCanvas');
+      const ctx = canvas.getContext('2d');
+      const avatarCanvas = document.getElementById('avatarPreview');
+      const avatarCtx = avatarCanvas.getContext('2d');
+
+      const hudModeLabel = document.getElementById('hudModeLabel');
+      const hudRound = document.getElementById('hudRound');
+      const hudScore = document.getElementById('hudScore');
+      const hudArrows = document.getElementById('hudArrows');
+      const hudWind = document.getElementById('hudWind');
+      const hudMergenBadge = document.getElementById('hudMergenBadge');
+      const aimHint = document.getElementById('aimHint');
+
+      const setupModal = document.getElementById('setupModal');
+      const summaryModal = document.getElementById('summaryModal');
+      const helpModal = document.getElementById('helpModal');
+
+      const state = {
+        screen: 'SETUP', // 'SETUP' | 'PLAYING' | 'SUMMARY' | 'HELP'
+        modeKey: 'beginner',
+        archerName: 'Temüülen',
+        deelColor: 'blue',
+        archerStyle: 'malgai',
+        round: 1,
+        arrowsLeft: 4,
+        roundHits: 0,
+        totalScore: 0,
+        mergenCount: 0,
+        factIndex: 0,
+        hasShotOnce: false,
+
+        // Wind in m/s (+ right, - left)
+        windSpeed: 1.2,
+
+        // Targets
+        surs: [],
+        stuckArrows: [],
+
+        // Aiming & Drawing
+        isDragging: false,
+        dragStartX: 0,
+        dragStartY: 0,
+        dragCurrX: 0,
+        dragCurrY: 0,
+        aimYawDeg: 0,      // left/right across row
+        drawTension: 0,    // 0..1
+        pitchDeg: 3.5,     // vertical arc angle
+        lastCreakBucket: 0,
+
+        // Keyboard aiming helpers
+        kbPower: 0.72,
+        kbPitch: 3.8,
+        kbYaw: 0,
+        kbCharging: false,
+
+        // Active flying arrow
+        activeArrow: null,
+
+        // Uuchin Judge animation
+        uuchin: {
+          mood: 'idle', // 'idle' | 'watching' | 'cheer' | 'encourage'
+          timer: 0,
+          message: '',
+          headShakePhase: 0
+        },
+
+        // Particles (grass dust, confetti, floating wisps)
+        particles: [],
+        windWisps: [],
+        clouds: [],
+        crowdBounce: 0
+      };
+
+      // Initialize ambient clouds & wind wisps
+      for (let i = 0; i < 6; i++) {
+        state.clouds.push({
+          x: Math.random(),
+          y: 0.06 + Math.random() * 0.16,
+          scale: 0.65 + Math.random() * 0.65,
+          speed: 0.004 + Math.random() * 0.004
+        });
+      }
+      for (let i = 0; i < 16; i++) {
+        state.windWisps.push({
+          x: Math.random(),
+          y: 0.45 + Math.random() * 0.45,
+          len: 14 + Math.random() * 20,
+          alpha: 0.15 + Math.random() * 0.25
+        });
+      }
+
+      // ============================================================
+      // 4. SETUP & TARGET INITIALIZATION
+      // ============================================================
+      function rollWind() {
+        const mode = MODES[state.modeKey];
+        const dir = Math.random() < 0.5 ? -1 : 1;
+        const mag = (0.25 + Math.random() * 0.75) * mode.windMax;
+        state.windSpeed = Math.round(dir * mag * 10) / 10;
+      }
+
+      function initSurs() {
+        const mode = MODES[state.modeKey];
+        const count = mode.surCount;
+        const pitch = mode.surWidthMeters + mode.surGapMeters;
+        const startX = -((count - 1) * pitch) / 2;
+        state.surs = [];
+        for (let i = 0; i < count; i++) {
+          const isCenterKhani = Math.abs(i - Math.floor(count / 2)) <= (count > 15 ? 1 : 0);
+          state.surs.push({
+            index: i,
+            x: startX + i * pitch,
+            y: 0,
+            z: mode.distance,
+            vx: 0,
+            vy: 0,
+            vz: 0,
+            rot: 0,
+            vRot: 0,
+            status: 'standing', // 'standing' | 'flying' | 'knocked'
+            isKhani: isCenterKhani
+          });
+        }
+      }
+
+      function startNewGame(resetScore = true) {
+        if (resetScore) {
+          state.round = 1;
+          state.totalScore = 0;
+          state.mergenCount = 0;
+        }
+        state.arrowsLeft = 4;
+        state.roundHits = 0;
+        state.stuckArrows = [];
+        state.activeArrow = null;
+        state.uuchin.mood = 'idle';
+        state.uuchin.timer = 0;
+        state.uuchin.message = '';
+        initSurs();
+        rollWind();
+        updateHUD();
+      }
+
+      function startNextRound() {
+        state.round += 1;
+        state.arrowsLeft = 4;
+        state.roundHits = 0;
+        state.stuckArrows = [];
+        state.activeArrow = null;
+        state.uuchin.mood = 'idle';
+        state.uuchin.message = '';
+        const remaining = state.surs.filter(s => s.status === 'standing').length;
+        if (remaining === 0) {
+          initSurs();
+        }
+        rollWind();
+        updateHUD();
+      }
+
+      // ============================================================
+      // 5. 3D-TO-2D STEPPE PERSPECTIVE & BALLISTICS
+      // ============================================================
+      let viewW = 1280;
+      let viewH = 720;
+
+      function resizeCanvas() {
+        const rect = canvas.parentElement.getBoundingClientRect();
+        const dpr = Math.min(window.devicePixelRatio || 1, 2);
+        viewW = Math.max(320, rect.width);
+        viewH = Math.max(320, rect.height);
+        canvas.width = Math.round(viewW * dpr);
+        canvas.height = Math.round(viewH * dpr);
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      }
+      window.addEventListener('resize', resizeCanvas);
+      resizeCanvas();
+
+      function getProjectionMetrics() {
+        const mode = MODES[state.modeKey];
+        const targetZ = mode.distance;
+        const archerGroundY = viewH * 0.89;
+        const targetGroundY = viewH * 0.49;
+        const centerX = viewW * 0.5;
+
+        // Horizontal meters-to-pixels calibrated at targetZ so the entire sur line fits generously
+        const rowPitch = mode.surWidthMeters + mode.surGapMeters;
+        const rowTotalMeters = Math.max(mode.surCount * rowPitch, 4.5);
+        const desiredRowPx = Math.min(viewW * mode.rowSpanRatio, 880);
+        const scaleAtTarget = 1 / 2.45;
+        const horizPxPerMeter = desiredRowPx / (rowTotalMeters * scaleAtTarget);
+        const vertPxPerMeter = Math.min(viewH * 0.145, 96);
+
+        return { targetZ, archerGroundY, targetGroundY, centerX, horizPxPerMeter, vertPxPerMeter, scaleAtTarget };
+      }
+
+      function worldToScreen(wx, wy, wz) {
+        const m = getProjectionMetrics();
+        const safeZ = Math.max(-2, wz);
+        const depthScale = 1 / (1 + (safeZ / m.targetZ) * 1.45);
+        const perspT = (1 - depthScale) / (1 - m.scaleAtTarget);
+        const groundY = m.archerGroundY + (m.targetGroundY - m.archerGroundY) * perspT;
+        const sx = m.centerX + wx * m.horizPxPerMeter * depthScale;
+        const sy = groundY - wy * m.vertPxPerMeter * depthScale;
+        return { x: sx, y: sy, scale: depthScale, groundY };
+      }
+
+      function computeLaunchParams() {
+        const mode = MODES[state.modeKey];
+        // Speed scales from 45% to 100% of mode maxSpeed with drawTension
+        const speed = mode.maxSpeed * (0.45 + 0.55 * state.drawTension);
+        const pitchRad = (state.pitchDeg * Math.PI) / 180;
+        const yawRad = (state.aimYawDeg * Math.PI) / 180;
+
+        // Launch point slightly to the left of center (archer's bow hand)
+        const startPos = { x: -0.35, y: 1.25, z: 0.2 };
+        const horizSpeed = speed * Math.cos(pitchRad);
+        const vx = horizSpeed * Math.sin(yawRad);
+        const vz = horizSpeed * Math.cos(yawRad);
+        const vy = speed * Math.sin(pitchRad);
+
+        return { startPos, vx, vy, vz, speed };
+      }
+
+      function getMaxYawDeg() {
+        const mode = MODES[state.modeKey];
+        const halfWidth = (mode.surCount * (mode.surWidthMeters + mode.surGapMeters)) * 0.58;
+        return (Math.atan2(halfWidth, mode.distance) * 180) / Math.PI;
+      }
+
+      // ============================================================
+      // 6. INPUT HANDLERS (MOUSE, TOUCH, KEYBOARD)
+      // ============================================================
+      function updateDragAim(currX, currY) {
+        state.dragCurrX = currX;
+        state.dragCurrY = currY;
+        const dx = currX - state.dragStartX;
+        const dy = currY - state.dragStartY;
+
+        // Pull downward (backward) builds draw tension and vertical arc angle
+        const pullY = Math.max(0, dy);
+        const maxPull = Math.min(185, Math.max(95, viewH - state.dragStartY - 12));
+        const rawNorm = Math.min(1, Math.max(0, (pullY - 12) / Math.max(65, maxPull - 12)));
+
+        state.drawTension = pullY < 12 ? 0 : Math.min(1, 0.22 + (pullY - 12) / 88 * 0.78);
+        state.pitchDeg = -1.0 + rawNorm * 11.5;
+
+        // Left/right drag sweeps across the horizontal row of surs
+        const maxYaw = getMaxYawDeg();
+        const sweepSpan = Math.min(viewW * 0.34, 340);
+        const normX = Math.max(-1, Math.min(1, dx / sweepSpan));
+        state.aimYawDeg = normX * maxYaw;
+
+        const bucket = Math.floor(state.drawTension * 4);
+        if (bucket > state.lastCreakBucket && state.drawTension > 0.35) {
+          AudioFX.playCreak(state.drawTension);
+          state.lastCreakBucket = bucket;
+        }
+      }
+
+      function fireArrow() {
+        if (state.arrowsLeft <= 0 || state.activeArrow) return;
+        const { startPos, vx, vy, vz, speed } = computeLaunchParams();
+        state.arrowsLeft -= 1;
+        state.hasShotOnce = true;
+        aimHint.classList.add('hidden');
+        updateHUD();
+
+        state.activeArrow = {
+          x: startPos.x,
+          y: startPos.y,
+          z: startPos.z,
+          prevX: startPos.x,
+          prevY: startPos.y,
+          prevZ: startPos.z,
+          vx,
+          vy,
+          vz,
+          trail: [{ x: startPos.x, y: startPos.y, z: startPos.z }]
+        };
+
+        state.uuchin.mood = 'watching';
+        state.uuchin.message = '';
+        AudioFX.playArrowWhoosh(state.drawTension);
+        state.drawTension = 0;
+        state.lastCreakBucket = 0;
+      }
+
+      canvas.addEventListener('pointerdown', (e) => {
+        if (state.screen !== 'PLAYING' || state.activeArrow || state.arrowsLeft <= 0) return;
+        canvas.focus();
+        canvas.setPointerCapture(e.pointerId);
+        const rect = canvas.getBoundingClientRect();
+        state.isDragging = true;
+        state.dragStartX = e.clientX - rect.left;
+        state.dragStartY = e.clientY - rect.top;
+        state.dragCurrX = state.dragStartX;
+        state.dragCurrY = state.dragStartY;
+        state.drawTension = 0.2;
+        state.pitchDeg = 0.5;
+        state.aimYawDeg = 0;
+        state.lastCreakBucket = 0;
+      });
+
+      canvas.addEventListener('pointermove', (e) => {
+        if (!state.isDragging) return;
+        const rect = canvas.getBoundingClientRect();
+        updateDragAim(e.clientX - rect.left, e.clientY - rect.top);
+      });
+
+      function endDrag(e) {
+        if (!state.isDragging) return;
+        state.isDragging = false;
+        if (e && canvas.hasPointerCapture && canvas.hasPointerCapture(e.pointerId)) {
+          canvas.releasePointerCapture(e.pointerId);
+        }
+        const pullDist = Math.max(0, state.dragCurrY - state.dragStartY);
+        if (pullDist >= 18) {
+          fireArrow();
+        } else {
+          state.drawTension = 0;
+        }
+      }
+
+      canvas.addEventListener('pointerup', endDrag);
+      canvas.addEventListener('pointercancel', () => {
+        state.isDragging = false;
+        state.drawTension = 0;
+      });
+
+      // Keyboard Accessibility Controls
+      const keysDown = new Set();
+      window.addEventListener('keydown', (e) => {
+        if (state.screen !== 'PLAYING' || state.activeArrow || state.arrowsLeft <= 0) return;
+        if (['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', ' '].includes(e.key)) {
+          if (document.activeElement && document.activeElement.tagName === 'INPUT') return;
+          e.preventDefault();
+          keysDown.add(e.key);
+          if (e.key === ' ' && !state.kbCharging) {
+            state.kbCharging = true;
+            state.drawTension = state.kbPower;
+            state.pitchDeg = state.kbPitch;
+            state.aimYawDeg = state.kbYaw;
+            AudioFX.playCreak(state.drawTension);
+          }
+        }
+      });
+
+      window.addEventListener('keyup', (e) => {
+        keysDown.delete(e.key);
+        if (e.key === ' ' && state.kbCharging) {
+          state.kbCharging = false;
+          if (state.screen === 'PLAYING' && !state.activeArrow && state.arrowsLeft > 0) {
+            fireArrow();
+          }
+        }
+      });
+
+      // ============================================================
+      // 7. HUD & MODAL WIRING
+      // ============================================================
+      function updateHUD() {
+        const mode = MODES[state.modeKey];
+        hudModeLabel.textContent = mode.shortLabel;
+        hudRound.textContent = String(state.round);
+        hudScore.textContent = String(state.totalScore);
+
+        // Render 4 arrow icons
+        hudArrows.innerHTML = '';
+        for (let i = 0; i < 4; i++) {
+          const isReady = i < state.arrowsLeft;
+          const span = document.createElement('span');
+          span.className = 'quiver-pip' + (isReady ? '' : ' spent');
+          span.innerHTML = `<svg width="16" height="16" viewBox="0 0 20 20" aria-hidden="true"><line x1="3" y1="17" x2="16" y2="4" stroke="#78350f" stroke-width="2.2" stroke-linecap="round"/><polygon points="17,3 11,4 16,9" fill="#b91c1c"/><line x1="3" y1="17" x2="2" y2="12" stroke="#d97706" stroke-width="2"/><line x1="3" y1="17" x2="8" y2="18" stroke="#d97706" stroke-width="2"/></svg>`;
+          hudArrows.appendChild(span);
+        }
+
+        const absWind = Math.abs(state.windSpeed);
+        if (absWind < 0.4) {
+          hudWind.textContent = 'Calm';
+        } else {
+          const arrow = state.windSpeed > 0 ? '→' : '←';
+          hudWind.textContent = `${absWind.toFixed(1)} m/s ${arrow}`;
+        }
+
+        if (state.mergenCount > 0) {
+          hudMergenBadge.style.display = 'inline';
+          hudMergenBadge.textContent = `· Mergen ×${state.mergenCount}`;
+        } else {
+          hudMergenBadge.style.display = 'none';
+        }
+      }
+
+      // Draw customized archer preview inside setup modal
+      function drawAvatarPreview() {
+        const c = avatarCtx;
+        c.clearRect(0, 0, 144, 144);
+        const pal = DEEL_PALETTES[state.deelColor];
+
+        // Ground shadow
+        c.fillStyle = 'rgba(0,0,0,0.16)';
+        c.beginPath();
+        c.ellipse(72, 128, 30, 7, 0, 0, Math.PI * 2);
+        c.fill();
+
+        // Upturned Gutal Boots
+        c.fillStyle = '#451a03';
+        c.beginPath();
+        c.roundRect(55, 110, 13, 18, 4);
+        c.roundRect(76, 110, 13, 18, 4);
+        c.fill();
+        // Upturned toes
+        c.beginPath();
+        c.ellipse(54, 125, 7, 4, -0.35, 0, Math.PI * 2);
+        c.ellipse(90, 125, 7, 4, 0.35, 0, Math.PI * 2);
+        c.fill();
+
+        // Deel robe
+        c.fillStyle = pal.main;
+        c.beginPath();
+        c.moveTo(54, 54);
+        c.lineTo(90, 54);
+        c.lineTo(98, 114);
+        c.lineTo(46, 114);
+        c.closePath();
+        c.fill();
+        c.strokeStyle = pal.dark;
+        c.lineWidth = 2;
+        c.stroke();
+
+        // Traditional diagonal lapel trim
+        c.strokeStyle = pal.trim;
+        c.lineWidth = 3;
+        c.beginPath();
+        c.moveTo(64, 55);
+        c.lineTo(84, 68);
+        c.lineTo(84, 113);
+        c.stroke();
+
+        // Silk sash
+        c.fillStyle = pal.sash;
+        c.fillRect(52, 80, 40, 9);
+
+        // Arms
+        c.strokeStyle = pal.main;
+        c.lineWidth = 10;
+        c.lineCap = 'round';
+        c.beginPath();
+        c.moveTo(54, 60);
+        c.lineTo(38, 78);
+        c.moveTo(90, 60);
+        c.lineTo(106, 76);
+        c.stroke();
+
+        // Hands
+        c.fillStyle = '#fed7aa';
+        c.beginPath();
+        c.arc(38, 79, 5, 0, Math.PI * 2);
+        c.arc(106, 77, 5, 0, Math.PI * 2);
+        c.fill();
+
+        // Mini composite bow in right hand
+        c.strokeStyle = '#78350f';
+        c.lineWidth = 3;
+        c.beginPath();
+        c.moveTo(106, 52);
+        c.quadraticCurveTo(118, 76, 106, 100);
+        c.stroke();
+        c.strokeStyle = '#e2e8f0';
+        c.lineWidth = 1.2;
+        c.beginPath();
+        c.moveTo(106, 52);
+        c.lineTo(104, 76);
+        c.lineTo(106, 100);
+        c.stroke();
+
+        // Head
+        c.fillStyle = '#fed7aa';
+        c.beginPath();
+        c.arc(72, 39, 15, 0, Math.PI * 2);
+        c.fill();
+
+        // Friendly rosy cheeks & eyes
+        c.fillStyle = '#1e293b';
+        c.beginPath();
+        c.arc(67, 38, 2, 0, Math.PI * 2);
+        c.arc(77, 38, 2, 0, Math.PI * 2);
+        c.fill();
+        c.fillStyle = '#fb7185';
+        c.globalAlpha = 0.45;
+        c.beginPath();
+        c.arc(63, 42, 3, 0, Math.PI * 2);
+        c.arc(81, 42, 3, 0, Math.PI * 2);
+        c.fill();
+        c.globalAlpha = 1;
+        c.strokeStyle = '#9a3412';
+        c.lineWidth = 1.8;
+        c.beginPath();
+        c.arc(72, 42, 4, 0.2, Math.PI - 0.2);
+        c.stroke();
+
+        // Hair / Hat
+        if (state.archerStyle === 'malgai') {
+          c.fillStyle = pal.dark;
+          c.beginPath();
+          c.ellipse(72, 26, 18, 6, 0, 0, Math.PI * 2);
+          c.fill();
+          c.fillStyle = pal.main;
+          c.beginPath();
+          c.moveTo(57, 26);
+          c.lineTo(72, 10);
+          c.lineTo(87, 26);
+          c.closePath();
+          c.fill();
+          // Golden knot finial
+          c.fillStyle = '#fbbf24';
+          c.beginPath();
+          c.arc(72, 10, 3.5, 0, Math.PI * 2);
+          c.fill();
+        } else {
+          // Dark hair + braids + festival ribbon
+          c.fillStyle = '#1e1b18';
+          c.beginPath();
+          c.arc(72, 34, 15.5, Math.PI, Math.PI * 2);
+          c.fill();
+          c.lineWidth = 5;
+          c.strokeStyle = '#1e1b18';
+          c.beginPath();
+          c.moveTo(58, 36);
+          c.lineTo(54, 62);
+          c.moveTo(86, 36);
+          c.lineTo(90, 62);
+          c.stroke();
+          // Ribbons
+          c.fillStyle = pal.sash;
+          c.fillRect(51, 58, 6, 6);
+          c.fillRect(87, 58, 6, 6);
+        }
+      }
+
+      // Setup modal option handlers
+      document.querySelectorAll('#modeList .mode-option').forEach(btn => {
+        btn.addEventListener('click', () => {
+          document.querySelectorAll('#modeList .mode-option').forEach(b => b.classList.remove('selected'));
+          btn.classList.add('selected');
+          state.modeKey = btn.dataset.mode;
+        });
+      });
+
+      document.querySelectorAll('#deelColors .swatch-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          document.querySelectorAll('#deelColors .swatch-btn').forEach(b => b.classList.remove('selected'));
+          btn.classList.add('selected');
+          state.deelColor = btn.dataset.color;
+          drawAvatarPreview();
+        });
+      });
+
+      document.querySelectorAll('#archerStyles .style-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          document.querySelectorAll('#archerStyles .style-btn').forEach(b => b.classList.remove('selected'));
+          btn.classList.add('selected');
+          state.archerStyle = btn.dataset.style;
+          drawAvatarPreview();
+        });
+      });
+
+      document.getElementById('archerNameInput').addEventListener('input', (e) => {
+        state.archerName = e.target.value.trim() || 'Temüülen';
+      });
+
+      document.getElementById('btnStartGame').addEventListener('click', () => {
+        setupModal.classList.add('hidden');
+        state.screen = 'PLAYING';
+        startNewGame(true);
+        canvas.focus();
+      });
+
+      document.getElementById('btnCustomize').addEventListener('click', () => {
+        summaryModal.classList.add('hidden');
+        helpModal.classList.add('hidden');
+        setupModal.classList.remove('hidden');
+        state.screen = 'SETUP';
+        drawAvatarPreview();
+      });
+
+      document.getElementById('btnHelp').addEventListener('click', () => {
+        if (state.screen === 'SETUP') return;
+        summaryModal.classList.add('hidden');
+        helpModal.classList.remove('hidden');
+        state.screen = 'HELP';
+      });
+
+      document.getElementById('btnCloseHelp').addEventListener('click', () => {
+        helpModal.classList.add('hidden');
+        state.screen = 'PLAYING';
+        canvas.focus();
+      });
+
+      const btnMute = document.getElementById('btnMute');
+      btnMute.addEventListener('click', () => {
+        const nextMuted = !AudioFX.isMuted();
+        AudioFX.setMuted(nextMuted);
+        btnMute.textContent = nextMuted ? 'Muted' : 'Sound On';
+        btnMute.setAttribute('aria-pressed', String(nextMuted));
+      });
+
+      document.getElementById('btnNextRound').addEventListener('click', () => {
+        summaryModal.classList.add('hidden');
+        state.screen = 'PLAYING';
+        startNextRound();
+        canvas.focus();
+      });
+
+      document.getElementById('btnSummarySetup').addEventListener('click', () => {
+        summaryModal.classList.add('hidden');
+        setupModal.classList.remove('hidden');
+        state.screen = 'SETUP';
+        drawAvatarPreview();
+      });
+
+      function showRoundSummary() {
+        state.screen = 'SUMMARY';
+        const isMergen = state.roundHits === 4;
+        if (isMergen) {
+          state.mergenCount += 1;
+          AudioFX.playMergenFanfare();
+        }
+        updateHUD();
+
+        document.getElementById('summaryTitle').textContent = isMergen
+          ? `KHURAI, ${state.archerName}! Perfect 4/4 Round!`
+          : `Round ${state.round} Complete!`;
+        document.getElementById('summarySubtitle').textContent = isMergen
+          ? `The crowd erupts across the steppe — you earned the title of Mergen!`
+          : `Great effort, ${state.archerName}! Take a look at a Mongolian archery tradition before your next 4 arrows.`;
+
+        const mergenBanner = document.getElementById('mergenBanner');
+        if (isMergen) mergenBanner.classList.remove('hidden');
+        else mergenBanner.classList.add('hidden');
+
+        document.getElementById('sumRoundHits').textContent = `${state.roundHits} / 4`;
+        document.getElementById('sumTotalScore').textContent = String(state.totalScore);
+        const remaining = state.surs.filter(s => s.status === 'standing').length;
+        document.getElementById('sumRemaining').textContent = remaining === 0 ? 'Resetting Line!' : String(remaining);
+
+        // Pick cultural fact card
+        const fact = CULTURAL_FACTS[state.factIndex % CULTURAL_FACTS.length];
+        state.factIndex += 1;
+        document.getElementById('factTitle').textContent = fact.title;
+        document.getElementById('factText').textContent = fact.text;
+        document.getElementById('factArt').innerHTML = getFactSvg(fact.icon);
+
+        summaryModal.classList.remove('hidden');
+      }
+
+      // ============================================================
+      // 8. PHYSICS UPDATE & COLLISIONS
+      // ============================================================
+      function spawnParticles(wx, wy, wz, color, count, speedScale = 1) {
+        for (let i = 0; i < count; i++) {
+          const ang = Math.random() * Math.PI * 2;
+          const sp = (1.2 + Math.random() * 2.8) * speedScale;
+          state.particles.push({
+            x: wx,
+            y: wy,
+            z: wz,
+            vx: Math.cos(ang) * sp,
+            vy: 1.5 + Math.random() * 3.5 * speedScale,
+            vz: Math.sin(ang) * sp,
+            color,
+            size: 3 + Math.random() * 4,
+            life: 0.55 + Math.random() * 0.45,
+            maxLife: 1.0
+          });
+        }
+      }
+
+      function computeContextualTip(missInfo) {
+        const { xAtTarget, yAtTarget, landedEarlyZ, targetZ, closestSurX } = missInfo;
+        if (landedEarlyZ !== null) {
+          if (landedEarlyZ < targetZ - 3) {
+            return "Just short in the grass! Pull back a bit deeper for more power!";
+          }
+          return "So close! Aim just slightly higher so it reaches the surs!";
+        }
+        if (yAtTarget > 0.48) {
+          return "Flew right over! Try a lower, flatter trajectory over the grass!";
+        }
+        const windAbs = Math.abs(state.windSpeed);
+        if (windAbs > 1.2) {
+          const pushedSameWay = (xAtTarget - closestSurX) * state.windSpeed > 0;
+          if (pushedSameWay) {
+            return state.windSpeed > 0
+              ? "Watch the khadag flags! Aim slightly left into the wind!"
+              : "Watch the khadag flags! Aim slightly right into the wind!";
+          }
+        }
+        return "Inches away! Line up with a sur and release smoothly!";
+      }
+
+      function finishShot() {
+        state.activeArrow = null;
+        if (state.arrowsLeft <= 0) {
+          setTimeout(() => {
+            if (state.screen === 'PLAYING') showRoundSummary();
+          }, 1150);
+        }
+      }
+
+      function updatePhysics(dt) {
+        const mode = MODES[state.modeKey];
+        const targetZ = mode.distance;
+
+        // Keyboard fine aiming
+        if (state.screen === 'PLAYING' && !state.activeArrow && state.arrowsLeft > 0) {
+          const maxYaw = getMaxYawDeg();
+          let kbChanged = false;
+          if (keysDown.has('ArrowLeft')) {
+            state.kbYaw = Math.max(-maxYaw, state.kbYaw - 26 * dt);
+            kbChanged = true;
+          }
+          if (keysDown.has('ArrowRight')) {
+            state.kbYaw = Math.min(maxYaw, state.kbYaw + 26 * dt);
+            kbChanged = true;
+          }
+          if (keysDown.has('ArrowUp')) {
+            state.kbPower = Math.min(1, state.kbPower + 0.32 * dt);
+            state.kbPitch = Math.min(10.5, state.kbPitch + 4.5 * dt);
+            kbChanged = true;
+          }
+          if (keysDown.has('ArrowDown')) {
+            state.kbPower = Math.max(0.3, state.kbPower - 0.32 * dt);
+            state.kbPitch = Math.max(-0.5, state.kbPitch - 4.5 * dt);
+            kbChanged = true;
+          }
+          if (state.kbCharging || kbChanged) {
+            state.aimYawDeg = state.kbYaw;
+            if (state.kbCharging) {
+              state.drawTension = state.kbPower;
+              state.pitchDeg = state.kbPitch;
+            }
+          }
+        }
+
+        // Clouds & wind wisps
+        for (const cl of state.clouds) {
+          cl.x += (cl.speed + state.windSpeed * 0.0015) * dt;
+          if (cl.x > 1.15) cl.x = -0.15;
+          if (cl.x < -0.15) cl.x = 1.15;
+        }
+        for (const w of state.windWisps) {
+          w.x += (state.windSpeed * 0.045) * dt;
+          if (w.x > 1.05) w.x = -0.05;
+          if (w.x < -0.05) w.x = 1.05;
+        }
+
+        // Uuchin reaction timer
+        if (state.uuchin.timer > 0) {
+          state.uuchin.timer -= dt;
+          state.uuchin.headShakePhase += dt * 11;
+          if (state.uuchin.timer <= 0 && !state.activeArrow) {
+            state.uuchin.mood = 'idle';
+            state.uuchin.message = '';
+          }
+        }
+        if (state.crowdBounce > 0) {
+          state.crowdBounce = Math.max(0, state.crowdBounce - dt * 1.4);
+        }
+
+        // Knocked sur physics
+        for (const sur of state.surs) {
+          if (sur.status === 'flying') {
+            sur.vy -= 14 * dt;
+            sur.x += sur.vx * dt;
+            sur.y += sur.vy * dt;
+            sur.z += sur.vz * dt;
+            sur.rot += sur.vRot * dt;
+            if (sur.y <= 0) {
+              sur.y = 0;
+              if (Math.abs(sur.vy) > 1.8) {
+                sur.vy = -sur.vy * 0.42;
+                sur.vx *= 0.7;
+                sur.vz *= 0.7;
+                spawnParticles(sur.x, 0.05, sur.z, '#78350f', 4, 0.5);
+              } else {
+                sur.vy = 0;
+                sur.vx = 0;
+                sur.vz = 0;
+                sur.vRot = 0;
+                sur.status = 'knocked';
+              }
+            }
+          }
+        }
+
+        // Particles
+        for (let i = state.particles.length - 1; i >= 0; i--) {
+          const p = state.particles[i];
+          p.vy -= 9.8 * dt;
+          p.x += p.vx * dt;
+          p.y = Math.max(0, p.y + p.vy * dt);
+          p.z += p.vz * dt;
+          p.life -= dt;
+          if (p.life <= 0) state.particles.splice(i, 1);
+        }
+
+        // Active flying arrow
+        const arr = state.activeArrow;
+        if (!arr) return;
+
+        // Sub-step arrow physics for accurate sur line crossing detection
+        const subSteps = 6;
+        const subDt = dt / subSteps;
+        const windAccel = state.windSpeed * 0.38;
+
+        for (let s = 0; s < subSteps; s++) {
+          arr.prevX = arr.x;
+          arr.prevY = arr.y;
+          arr.prevZ = arr.z;
+
+          arr.vx += windAccel * subDt;
+          arr.vy -= 9.81 * subDt;
+
+          arr.x += arr.vx * subDt;
+          arr.y += arr.vy * subDt;
+          arr.z += arr.vz * subDt;
+
+          // Check crossing targetZ plane!
+          if (arr.prevZ < targetZ && arr.z >= targetZ) {
+            const frac = (targetZ - arr.prevZ) / Math.max(0.0001, arr.z - arr.prevZ);
+            const crossX = arr.prevX + (arr.x - arr.prevX) * frac;
+            const crossY = arr.prevY + (arr.y - arr.prevY) * frac;
+
+            // Check standing surs
+            let hitSur = null;
+            let bestDist = Infinity;
+            const hitRadiusX = mode.surWidthMeters * 0.62;
+            for (const sur of state.surs) {
+              if (sur.status !== 'standing') continue;
+              const dx = Math.abs(crossX - sur.x);
+              if (dx <= hitRadiusX && crossY >= -0.05 && crossY <= mode.surHeightMeters + 0.08) {
+                if (dx < bestDist) {
+                  bestDist = dx;
+                  hitSur = sur;
+                }
+              }
+            }
+
+            if (hitSur) {
+              // HIT! Knock the sur out of the line!
+              hitSur.status = 'flying';
+              hitSur.vx = (crossX - hitSur.x) * 4 + (Math.random() - 0.5) * 2.2;
+              hitSur.vy = 4.2 + Math.random() * 1.6;
+              hitSur.vz = 5.5 + Math.random() * 2.5;
+              hitSur.vRot = (Math.random() < 0.5 ? -1 : 1) * (8 + Math.random() * 6);
+
+              state.roundHits += 1;
+              state.totalScore += 1;
+              updateHUD();
+
+              // Confetti & leather dust
+              spawnParticles(hitSur.x, 0.25, hitSur.z, '#dc2626', 10, 1.3);
+              spawnParticles(hitSur.x, 0.25, hitSur.z, '#fbbf24', 12, 1.5);
+              spawnParticles(hitSur.x, 0.25, hitSur.z, '#3b82f6', 8, 1.2);
+
+              state.uuchin.mood = 'cheer';
+              state.uuchin.timer = 2.4;
+              state.uuchin.message = 'KHURAI! KHURAI! KHURAI!';
+              state.crowdBounce = 1.0;
+
+              AudioFX.playSurHit();
+
+              // Arrow continues briefly behind the sur and drops into grass
+              arr.vx *= 0.4;
+              arr.vy = 1.2;
+              arr.vz *= 0.35;
+              arr.alreadyHit = true;
+            } else if (!arr.alreadyHit) {
+              // Record miss context at targetZ
+              arr.missedAtTarget = { xAtTarget: crossX, yAtTarget: crossY };
+            }
+          }
+
+          // Ground impact
+          if (arr.y <= 0.02) {
+            arr.y = 0.02;
+            const pitchAngle = Math.atan2(arr.vy, arr.vz);
+            state.stuckArrows.push({
+              x: arr.x,
+              y: 0.02,
+              z: arr.z,
+              angle: Math.max(-0.55, Math.min(-0.15, pitchAngle)),
+              yaw: Math.atan2(arr.vx, arr.vz)
+            });
+            spawnParticles(arr.x, 0.04, arr.z, '#4ade80', 6, 0.65);
+
+            if (!arr.alreadyHit) {
+              AudioFX.playGrassThud();
+              let closestX = 0;
+              let minD = Infinity;
+              for (const s of state.surs) {
+                if (s.status === 'standing' && Math.abs(s.x - arr.x) < minD) {
+                  minD = Math.abs(s.x - arr.x);
+                  closestX = s.x;
+                }
+              }
+              const missData = arr.missedAtTarget
+                ? { ...arr.missedAtTarget, landedEarlyZ: null, targetZ, closestSurX: closestX }
+                : { xAtTarget: arr.x, yAtTarget: 0, landedEarlyZ: arr.z, targetZ, closestSurX: closestX };
+
+              state.uuchin.mood = 'encourage';
+              state.uuchin.timer = 2.5;
+              state.uuchin.headShakePhase = 0;
+              state.uuchin.message = computeContextualTip(missData);
+            }
+            finishShot();
+            return;
+          }
+
+          // Out of bounds far behind targets
+          if (arr.z > targetZ * 1.45) {
+            if (!arr.alreadyHit) {
+              AudioFX.playGrassThud();
+              state.uuchin.mood = 'encourage';
+              state.uuchin.timer = 2.5;
+              state.uuchin.message = "Sailed too far! Pull back gently for a flatter shot!";
+            }
+            finishShot();
+            return;
+          }
+        }
+
+        arr.trail.push({ x: arr.x, y: arr.y, z: arr.z });
+        if (arr.trail.length > 18) arr.trail.shift();
+      }
+
+      // ============================================================
+      // 9. CANVAS RENDERING (STORYBOOK MONGOLIAN STEPPE)
+      // ============================================================
+      function drawSkyAndMountains(time) {
+        const horizonY = viewH * 0.43;
+        const skyGrad = ctx.createLinearGradient(0, 0, 0, horizonY);
+        skyGrad.addColorStop(0, '#2563eb');
+        skyGrad.addColorStop(0.55, '#60a5fa');
+        skyGrad.addColorStop(1, '#bae6fd');
+        ctx.fillStyle = skyGrad;
+        ctx.fillRect(0, 0, viewW, horizonY + 10);
+
+        // Warm steppe sun
+        const sunX = viewW * 0.16;
+        const sunY = viewH * 0.14;
+        const sunGrad = ctx.createRadialGradient(sunX, sunY, 8, sunX, sunY, 70);
+        sunGrad.addColorStop(0, '#fef9c3');
+        sunGrad.addColorStop(0.35, 'rgba(254, 240, 138, 0.7)');
+        sunGrad.addColorStop(1, 'rgba(254, 240, 138, 0)');
+        ctx.fillStyle = sunGrad;
+        ctx.beginPath();
+        ctx.arc(sunX, sunY, 70, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Fluffy storybook clouds
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.92)';
+        for (const cl of state.clouds) {
+          const cx = cl.x * viewW;
+          const cy = cl.y * viewH;
+          const s = cl.scale * Math.min(viewW / 1200, 1.15);
+          ctx.beginPath();
+          ctx.arc(cx, cy, 24 * s, 0, Math.PI * 2);
+          ctx.arc(cx + 22 * s, cy - 8 * s, 28 * s, 0, Math.PI * 2);
+          ctx.arc(cx + 48 * s, cy, 22 * s, 0, Math.PI * 2);
+          ctx.arc(cx + 24 * s, cy + 8 * s, 24 * s, 0, Math.PI * 2);
+          ctx.fill();
+        }
+
+        // Distant Khangai Mountains
+        ctx.fillStyle = '#6488a8';
+        ctx.beginPath();
+        ctx.moveTo(0, horizonY);
+        ctx.lineTo(viewW * 0.12, horizonY - viewH * 0.11);
+        ctx.lineTo(viewW * 0.28, horizonY - viewH * 0.04);
+        ctx.lineTo(viewW * 0.48, horizonY - viewH * 0.13);
+        ctx.lineTo(viewW * 0.66, horizonY - viewH * 0.05);
+        ctx.lineTo(viewW * 0.85, horizonY - viewH * 0.12);
+        ctx.lineTo(viewW, horizonY - viewH * 0.03);
+        ctx.lineTo(viewW, horizonY);
+        ctx.closePath();
+        ctx.fill();
+
+        // Rolling emerald steppe hills
+        ctx.fillStyle = '#4d9654';
+        ctx.beginPath();
+        ctx.moveTo(0, horizonY);
+        ctx.quadraticCurveTo(viewW * 0.25, horizonY - viewH * 0.055, viewW * 0.55, horizonY - viewH * 0.015);
+        ctx.quadraticCurveTo(viewW * 0.80, horizonY - viewH * 0.05, viewW, horizonY - viewH * 0.01);
+        ctx.lineTo(viewW, horizonY + 12);
+        ctx.lineTo(0, horizonY + 12);
+        ctx.closePath();
+        ctx.fill();
+
+        // Lush Grassy Range Field
+        const grassGrad = ctx.createLinearGradient(0, horizonY, 0, viewH);
+        grassGrad.addColorStop(0, '#55a659');
+        grassGrad.addColorStop(0.45, '#3b8744');
+        grassGrad.addColorStop(1, '#266131');
+        ctx.fillStyle = grassGrad;
+        ctx.fillRect(0, horizonY, viewW, viewH - horizonY);
+
+        // Subtle perspective lane mowing stripes on the steppe
+        const topLeft = worldToScreen(-8, 0, MODES[state.modeKey].distance * 1.15);
+        const topRight = worldToScreen(8, 0, MODES[state.modeKey].distance * 1.15);
+        const botLeft = worldToScreen(-8, 0, 0);
+        const botRight = worldToScreen(8, 0, 0);
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.055)';
+        ctx.beginPath();
+        ctx.moveTo(topLeft.x, topLeft.y);
+        ctx.lineTo(topRight.x, topRight.y);
+        ctx.lineTo(botRight.x, botRight.y);
+        ctx.lineTo(botLeft.x, botLeft.y);
+        ctx.closePath();
+        ctx.fill();
+      }
+
+      function drawGer(x, y, scale, time) {
+        ctx.save();
+        ctx.translate(x, y);
+        ctx.scale(scale, scale);
+
+        // Smoke wisps
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.55)';
+        ctx.lineWidth = 3;
+        ctx.lineCap = 'round';
+        ctx.beginPath();
+        const drift = state.windSpeed * 4;
+        ctx.moveTo(0, -44);
+        ctx.quadraticCurveTo(drift * 0.5 + Math.sin(time * 2) * 3, -58, drift + Math.cos(time * 2) * 4, -72);
+        ctx.stroke();
+
+        // Shadow
+        ctx.fillStyle = 'rgba(0,0,0,0.16)';
+        ctx.beginPath();
+        ctx.ellipse(0, 2, 42, 7, 0, 0, Math.PI * 2);
+        ctx.fill();
+
+        // White canvas walls
+        ctx.fillStyle = '#f8fafc';
+        ctx.strokeStyle = '#cbd5e1';
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.rect(-36, -24, 72, 24);
+        ctx.fill();
+        ctx.stroke();
+
+        // Conical roof
+        ctx.fillStyle = '#ffffff';
+        ctx.beginPath();
+        ctx.moveTo(-40, -24);
+        ctx.lineTo(0, -44);
+        ctx.lineTo(40, -24);
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+
+        // Decorative roof band
+        ctx.fillStyle = '#1d4ed8';
+        ctx.fillRect(-36, -25, 72, 4);
+
+        // Traditional wooden orange-red door
+        ctx.fillStyle = '#dc2626';
+        ctx.fillRect(-7, -19, 14, 19);
+        ctx.strokeStyle = '#fbbf24';
+        ctx.lineWidth = 1.2;
+        ctx.strokeRect(-7, -19, 14, 19);
+
+        ctx.restore();
+      }
+
+      function drawKhadagFlagPole(x, y, scale, time, flip = false) {
+        ctx.save();
+        ctx.translate(x, y);
+        ctx.scale(scale, scale);
+
+        // Wooden pole
+        ctx.strokeStyle = '#78350f';
+        ctx.lineWidth = 4;
+        ctx.beginPath();
+        ctx.moveTo(0, 0);
+        ctx.lineTo(0, -108);
+        ctx.stroke();
+
+        // Finial orb
+        ctx.fillStyle = '#fbbf24';
+        ctx.beginPath();
+        ctx.arc(0, -110, 5, 0, Math.PI * 2);
+        ctx.fill();
+
+        // 5 colorful fluttering Khadag ribbons (Blue, White, Red, Yellow, Green)
+        const colors = ['#1d4ed8', '#f8fafc', '#dc2626', '#fbbf24', '#16a34a'];
+        const wind = state.windSpeed;
+        const absW = Math.abs(wind);
+        const dir = wind === 0 ? (flip ? -1 : 1) : Math.sign(wind);
+        const reach = 14 + Math.min(48, absW * 8.5);
+        const droop = Math.max(4, 24 - absW * 3.5);
+        const freq = 3.5 + absW * 1.8;
+
+        colors.forEach((col, i) => {
+          const anchorY = -102 + i * 11;
+          const wave1 = Math.sin(time * freq + i * 0.9) * (3 + absW * 1.4);
+          const wave2 = Math.cos(time * freq * 1.25 + i * 1.2) * (4 + absW * 1.8);
+          ctx.strokeStyle = col;
+          ctx.lineWidth = 5.5;
+          ctx.lineCap = 'round';
+          ctx.beginPath();
+          ctx.moveTo(0, anchorY);
+          ctx.bezierCurveTo(
+            dir * reach * 0.4, anchorY + droop * 0.35 + wave1,
+            dir * reach * 0.75, anchorY + droop * 0.7 + wave2,
+            dir * reach, anchorY + droop + wave1 * 0.8
+          );
+          ctx.stroke();
+        });
+
+        ctx.restore();
+      }
+
+      function drawNaadamBackground(time) {
+        const horizonY = viewH * 0.43;
+
+        // Distant white Gers
+        drawGer(viewW * 0.14, horizonY + 8, Math.min(viewW / 1280, 1.0) * 0.82, time);
+        drawGer(viewW * 0.25, horizonY + 14, Math.min(viewW / 1280, 1.0) * 0.68, time + 1.5);
+        drawGer(viewW * 0.85, horizonY + 10, Math.min(viewW / 1280, 1.0) * 0.86, time + 2.3);
+
+        // Festive Naadam pennant string across background
+        const pennantY = horizonY + 4;
+        ctx.strokeStyle = '#94a3b8';
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.moveTo(viewW * 0.04, pennantY - 18);
+        ctx.quadraticCurveTo(viewW * 0.5, pennantY + 6, viewW * 0.96, pennantY - 18);
+        ctx.stroke();
+
+        const pColors = ['#dc2626', '#fbbf24', '#1d4ed8', '#16a34a', '#ffffff'];
+        const numPennants = 26;
+        for (let i = 1; i < numPennants; i++) {
+          const t = i / numPennants;
+          const px = viewW * (0.04 + t * 0.92);
+          const sag = 4 * t * (1 - t) * 24;
+          const py = pennantY - 18 + sag;
+          const sway = Math.sin(time * (3 + Math.abs(state.windSpeed)) + i) * (2 + Math.abs(state.windSpeed) * 0.6);
+          ctx.fillStyle = pColors[i % pColors.length];
+          ctx.beginPath();
+          ctx.moveTo(px - 6, py);
+          ctx.lineTo(px + 6, py);
+          ctx.lineTo(px + sway, py + 13);
+          ctx.closePath();
+          ctx.fill();
+        }
+
+        // Distant cheering crowd silhouettes along both sides of the target line
+        const mode = MODES[state.modeKey];
+        const rowHalf = (mode.surCount * (mode.surWidthMeters + mode.surGapMeters)) / 2;
+        const bounce = Math.sin(time * 16) * state.crowdBounce * 6;
+        const crowdColors = ['#1d4ed8', '#b91c1c', '#d97706', '#047857', '#7c3aed'];
+        for (let side of [-1, 1]) {
+          for (let c = 0; c < 6; c++) {
+            const wx = side * (rowHalf + 2.4 + c * 0.85);
+            const wz = mode.distance + 1.8 + (c % 2) * 1.1;
+            const pos = worldToScreen(wx, 0, wz);
+            const sc = pos.scale * 1.15;
+            const bob = state.crowdBounce > 0 ? Math.abs(bounce) * ((c % 2) + 0.5) : Math.sin(time * 2 + c) * 1.2;
+            ctx.fillStyle = crowdColors[(c + (side > 0 ? 2 : 0)) % crowdColors.length];
+            ctx.beginPath();
+            ctx.roundRect(pos.x - 10 * sc, pos.y - 44 * sc - bob, 20 * sc, 44 * sc, 6 * sc);
+            ctx.fill();
+            ctx.fillStyle = '#fed7aa';
+            ctx.beginPath();
+            ctx.arc(pos.x, pos.y - 52 * sc - bob, 8 * sc, 0, Math.PI * 2);
+            ctx.fill();
+            // Raised arms when cheering!
+            if (state.crowdBounce > 0.15) {
+              ctx.strokeStyle = crowdColors[(c + (side > 0 ? 2 : 0)) % crowdColors.length];
+              ctx.lineWidth = 4 * sc;
+              ctx.beginPath();
+              ctx.moveTo(pos.x - 8 * sc, pos.y - 36 * sc - bob);
+              ctx.lineTo(pos.x - 16 * sc, pos.y - 56 * sc - bob);
+              ctx.moveTo(pos.x + 8 * sc, pos.y - 36 * sc - bob);
+              ctx.lineTo(pos.x + 16 * sc, pos.y - 56 * sc - bob);
+              ctx.stroke();
+            }
+          }
+        }
+
+        // Khadag Prayer Flag Poles at mid-range left & right so wind is crystal clear!
+        const leftFlagPos = worldToScreen(-rowHalf - 1.6, 0, mode.distance * 0.72);
+        const rightFlagPos = worldToScreen(rowHalf + 1.6, 0, mode.distance * 0.72);
+        drawKhadagFlagPole(leftFlagPos.x, leftFlagPos.y, leftFlagPos.scale * 1.45, time, false);
+        drawKhadagFlagPole(rightFlagPos.x, rightFlagPos.y, rightFlagPos.scale * 1.45, time + 0.7, true);
+
+        // Wind wisps flying across the grass
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.35)';
+        ctx.lineWidth = 1.5;
+        for (const w of state.windWisps) {
+          if (Math.abs(state.windSpeed) < 0.4) continue;
+          const wx = w.x * viewW;
+          const wy = w.y * viewH;
+          ctx.globalAlpha = w.alpha * Math.min(1, Math.abs(state.windSpeed) / 3);
+          ctx.beginPath();
+          ctx.moveTo(wx, wy);
+          ctx.lineTo(wx + Math.sign(state.windSpeed) * w.len, wy);
+          ctx.stroke();
+        }
+        ctx.globalAlpha = 1;
+      }
+
+      function drawZurkhaiAndSurs() {
+        const mode = MODES[state.modeKey];
+        const m = getProjectionMetrics();
+        const rowHalf = (mode.surCount * (mode.surWidthMeters + mode.surGapMeters)) / 2 + 0.55;
+        const leftEnd = worldToScreen(-rowHalf, 0, mode.distance);
+        const rightEnd = worldToScreen(rowHalf, 0, mode.distance);
+
+        // Earthen Zurkhai strip where surs stand
+        ctx.fillStyle = '#855836';
+        ctx.strokeStyle = '#5c3a21';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.roundRect(leftEnd.x - 10, leftEnd.y - 5, (rightEnd.x - leftEnd.x) + 20, 12, 6);
+        ctx.fill();
+        ctx.stroke();
+
+        // Wooden end stakes
+        for (const endPos of [leftEnd, rightEnd]) {
+          ctx.fillStyle = '#78350f';
+          ctx.fillRect(endPos.x - 3, endPos.y - 26 * endPos.scale * 2, 6, 30 * endPos.scale * 2);
+          ctx.fillStyle = '#dc2626';
+          ctx.fillRect(endPos.x - 4, endPos.y - 26 * endPos.scale * 2, 8, 6);
+        }
+
+        // Draw surs sorted back-to-front by z
+        const sortedSurs = [...state.surs].sort((a, b) => b.z - a.z);
+        for (const sur of sortedSurs) {
+          const pos = worldToScreen(sur.x, sur.y, sur.z);
+          const sw = Math.max(10, mode.surWidthMeters * m.horizPxPerMeter * pos.scale);
+          const sh = Math.max(14, mode.surHeightMeters * m.vertPxPerMeter * pos.scale);
+
+          // Ground shadow
+          const groundP = worldToScreen(sur.x, 0, sur.z);
+          ctx.fillStyle = 'rgba(0, 0, 0, 0.25)';
+          ctx.beginPath();
+          ctx.ellipse(groundP.x, groundP.y + 2, sw * 0.55, Math.max(2.5, sw * 0.18), 0, 0, Math.PI * 2);
+          ctx.fill();
+
+          ctx.save();
+          ctx.translate(pos.x, pos.y - sh * 0.5);
+          ctx.rotate(sur.rot);
+
+          // Cylindrical leather body
+          const bodyGrad = ctx.createLinearGradient(-sw / 2, 0, sw / 2, 0);
+          bodyGrad.addColorStop(0, '#78350f');
+          bodyGrad.addColorStop(0.35, '#b45309');
+          bodyGrad.addColorStop(1, '#5c2808');
+          ctx.fillStyle = bodyGrad;
+          ctx.strokeStyle = '#3b1806';
+          ctx.lineWidth = 1.4;
+          ctx.beginPath();
+          ctx.roundRect(-sw / 2, -sh / 2, sw, sh, 3);
+          ctx.fill();
+          ctx.stroke();
+
+          // Red / Gold woven leather center band (Khani surs have gold band!)
+          ctx.fillStyle = sur.isKhani ? '#fbbf24' : '#dc2626';
+          ctx.fillRect(-sw / 2 + 1, -sh * 0.18, sw - 2, sh * 0.36);
+
+          // Top oval rim
+          ctx.fillStyle = '#d97706';
+          ctx.beginPath();
+          ctx.ellipse(0, -sh / 2, sw / 2, Math.max(2.2, sw * 0.16), 0, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.stroke();
+
+          ctx.restore();
+        }
+      }
+
+      function drawUuchin(time) {
+        const mode = MODES[state.modeKey];
+        const rowHalf = (mode.surCount * (mode.surWidthMeters + mode.surGapMeters)) / 2;
+        const pos = worldToScreen(rowHalf + 1.35, 0, mode.distance + 0.5);
+        const sc = Math.max(0.55, pos.scale * 1.48);
+
+        let jumpY = 0;
+        let headTilt = 0;
+        let armAngle = 0.3; // relaxed down
+
+        if (state.uuchin.mood === 'cheer') {
+          jumpY = Math.abs(Math.sin(time * 9)) * 14 * sc;
+          armAngle = -1.25; // BOTH ARMS RAISED HIGH!
+        } else if (state.uuchin.mood === 'encourage') {
+          headTilt = Math.sin(state.uuchin.headShakePhase) * 0.22;
+          armAngle = 0.15;
+        } else if (state.uuchin.mood === 'watching') {
+          armAngle = 0.05;
+        }
+
+        ctx.save();
+        ctx.translate(pos.x, pos.y - jumpY);
+        ctx.scale(sc, sc);
+
+        // Ground shadow
+        ctx.fillStyle = 'rgba(0,0,0,0.22)';
+        ctx.beginPath();
+        ctx.ellipse(0, jumpY / sc + 2, 22, 6, 0, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Gutal boots
+        ctx.fillStyle = '#451a03';
+        ctx.fillRect(-12, -16, 9, 16);
+        ctx.fillRect(3, -16, 9, 16);
+
+        // Bright traditional Deel robe
+        ctx.fillStyle = '#d97706';
+        ctx.strokeStyle = '#78350f';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(-16, -72);
+        ctx.lineTo(16, -72);
+        ctx.lineTo(22, -14);
+        ctx.lineTo(-22, -14);
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+
+        // Blue silk sash
+        ctx.fillStyle = '#1d4ed8';
+        ctx.fillRect(-17, -48, 34, 8);
+
+        // Arms
+        ctx.strokeStyle = '#d97706';
+        ctx.lineWidth = 9;
+        ctx.lineCap = 'round';
+        for (const side of [-1, 1]) {
+          const ax = side * 16;
+          const ay = -68;
+          const handX = ax + side * Math.cos(armAngle) * 26;
+          const handY = ay + Math.sin(armAngle) * 26;
+          ctx.beginPath();
+          ctx.moveTo(ax, ay);
+          ctx.lineTo(handX, handY);
+          ctx.stroke();
+          ctx.fillStyle = '#fed7aa';
+          ctx.beginPath();
+          ctx.arc(handX, handY, 4.5, 0, Math.PI * 2);
+          ctx.fill();
+        }
+
+        // Head & Malgai hat
+        ctx.save();
+        ctx.translate(0, -84);
+        ctx.rotate(headTilt);
+
+        ctx.fillStyle = '#fed7aa';
+        ctx.beginPath();
+        ctx.arc(0, 0, 12, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Friendly mustache & smile
+        ctx.fillStyle = '#1e293b';
+        ctx.beginPath();
+        ctx.arc(-4, -2, 1.6, 0, Math.PI * 2);
+        ctx.arc(4, -2, 1.6, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = '#475569';
+        ctx.lineWidth = 1.6;
+        ctx.beginPath();
+        ctx.moveTo(-5, 3);
+        ctx.quadraticCurveTo(0, 1, 5, 3);
+        ctx.stroke();
+
+        // Pointed Uuchin Malgai Hat
+        ctx.fillStyle = '#1e3a8a';
+        ctx.beginPath();
+        ctx.ellipse(0, -10, 16, 4.5, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = '#b91c1c';
+        ctx.beginPath();
+        ctx.moveTo(-12, -10);
+        ctx.lineTo(0, -28);
+        ctx.lineTo(12, -10);
+        ctx.closePath();
+        ctx.fill();
+        // Trailing red ribbons
+        ctx.strokeStyle = '#ef4444';
+        ctx.lineWidth = 2.5;
+        ctx.beginPath();
+        ctx.moveTo(-10, -10);
+        ctx.lineTo(-17, 4);
+        ctx.moveTo(10, -10);
+        ctx.lineTo(17, 4);
+        ctx.stroke();
+
+        ctx.restore();
+        ctx.restore();
+
+        // Speech Bubble!
+        if (state.uuchin.message) {
+          const isCheer = state.uuchin.mood === 'cheer';
+          const text = state.uuchin.message;
+          ctx.save();
+          ctx.font = isCheer ? '800 18px Georgia, serif' : '700 14px "Trebuchet MS", sans-serif';
+          const metrics = ctx.measureText(text);
+          const padX = 16;
+          const bw = Math.min(viewW * 0.44, metrics.width + padX * 2);
+          const bh = isCheer ? 44 : 40;
+          let bx = pos.x - bw * 0.72;
+          bx = Math.max(12, Math.min(viewW - bw - 12, bx));
+          const by = Math.max(12, pos.y - 125 * sc - bh - jumpY);
+
+          ctx.fillStyle = isCheer ? '#fef3c7' : '#ffffff';
+          ctx.strokeStyle = isCheer ? '#d97706' : '#94a3b8';
+          ctx.lineWidth = isCheer ? 3 : 2;
+          ctx.beginPath();
+          ctx.roundRect(bx, by, bw, bh, 12);
+          ctx.fill();
+          ctx.stroke();
+
+          // Speech pointer
+          const tipX = Math.max(bx + 18, Math.min(bx + bw - 18, pos.x));
+          ctx.fillStyle = isCheer ? '#fef3c7' : '#ffffff';
+          ctx.beginPath();
+          ctx.moveTo(tipX - 8, by + bh - 1);
+          ctx.lineTo(tipX, by + bh + 10);
+          ctx.lineTo(tipX + 8, by + bh - 1);
+          ctx.closePath();
+          ctx.fill();
+          ctx.stroke();
+
+          ctx.fillStyle = isCheer ? '#b91c1c' : '#1e293b';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText(text, bx + bw / 2, by + bh / 2, bw - 16);
+          ctx.restore();
+        }
+      }
+
+      function drawTrajectoryPreview() {
+        if ((!state.isDragging && !state.kbCharging) || state.drawTension <= 0.05) return;
+        const mode = MODES[state.modeKey];
+        const { startPos, vx, vy, vz } = computeLaunchParams();
+        const maxZ = mode.distance * mode.previewRatio;
+
+        // Simulate pure ballistic arc (NO wind — player reads khadag flags to compensate!)
+        let x = startPos.x;
+        let y = startPos.y;
+        let z = startPos.z;
+        let curVy = vy;
+        const stepDt = 0.032;
+
+        const points = [];
+        for (let i = 0; i < 45; i++) {
+          x += vx * stepDt;
+          curVy -= 9.81 * stepDt;
+          y += curVy * stepDt;
+          z += vz * stepDt;
+          if (z > maxZ || y < 0) break;
+          points.push({ x, y, z });
+        }
+
+        for (let i = 0; i < points.length; i++) {
+          const p = points[i];
+          const sp = worldToScreen(p.x, p.y, p.z);
+          const fade = (1 - i / Math.max(1, points.length)) * mode.previewOpacity;
+          ctx.fillStyle = `rgba(254, 249, 195, ${fade.toFixed(3)})`;
+          ctx.strokeStyle = `rgba(146, 64, 14, ${(fade * 0.7).toFixed(3)})`;
+          ctx.lineWidth = 1.2;
+          ctx.beginPath();
+          ctx.arc(sp.x, sp.y, Math.max(2, 4.2 * sp.scale), 0, Math.PI * 2);
+          ctx.fill();
+          ctx.stroke();
+        }
+      }
+
+      function drawStuckAndActiveArrows() {
+        // Stuck arrows in grass
+        for (const st of state.stuckArrows) {
+          const tail = worldToScreen(
+            st.x - Math.sin(st.yaw) * 0.65,
+            st.y + 0.38,
+            st.z - Math.cos(st.yaw) * 0.65
+          );
+          const tip = worldToScreen(st.x, st.y, st.z);
+
+          ctx.strokeStyle = '#78350f';
+          ctx.lineWidth = Math.max(1.8, 3.2 * tip.scale);
+          ctx.beginPath();
+          ctx.moveTo(tail.x, tail.y);
+          ctx.lineTo(tip.x, tip.y);
+          ctx.stroke();
+
+          // Fletching feathers
+          ctx.fillStyle = '#dc2626';
+          ctx.beginPath();
+          ctx.arc(tail.x, tail.y, Math.max(2, 3.5 * tail.scale), 0, Math.PI * 2);
+          ctx.fill();
+        }
+
+        // Active flying arrow
+        const arr = state.activeArrow;
+        if (!arr) return;
+
+        // Crisp grass shadow directly beneath arrow
+        const shadowPos = worldToScreen(arr.x, 0, arr.z);
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.28)';
+        ctx.beginPath();
+        ctx.ellipse(shadowPos.x, shadowPos.y, Math.max(3, 12 * shadowPos.scale), Math.max(1.5, 4 * shadowPos.scale), 0, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Air streak trail
+        if (arr.trail.length > 2) {
+          ctx.strokeStyle = 'rgba(255, 255, 255, 0.45)';
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          arr.trail.forEach((pt, idx) => {
+            const sp = worldToScreen(pt.x, pt.y, pt.z);
+            if (idx === 0) ctx.moveTo(sp.x, sp.y);
+            else ctx.lineTo(sp.x, sp.y);
+          });
+          ctx.stroke();
+        }
+
+        // Arrow shaft
+        const speedMag = Math.hypot(arr.vx, arr.vy, arr.vz) || 1;
+        const dirX = arr.vx / speedMag;
+        const dirY = arr.vy / speedMag;
+        const dirZ = arr.vz / speedMag;
+        const tipPos = worldToScreen(arr.x, arr.y, arr.z);
+        const tailPos = worldToScreen(arr.x - dirX * 0.9, arr.y - dirY * 0.9, arr.z - dirZ * 0.9);
+
+        ctx.strokeStyle = '#92400e';
+        ctx.lineWidth = Math.max(2.2, 4.5 * tipPos.scale);
+        ctx.lineCap = 'round';
+        ctx.beginPath();
+        ctx.moveTo(tailPos.x, tailPos.y);
+        ctx.lineTo(tipPos.x, tipPos.y);
+        ctx.stroke();
+
+        // Blunt horn/iron Bolzootoi Sur Arrowhead
+        ctx.fillStyle = '#334155';
+        ctx.beginPath();
+        ctx.arc(tipPos.x, tipPos.y, Math.max(2.5, 4.5 * tipPos.scale), 0, Math.PI * 2);
+        ctx.fill();
+
+        // Bright fletching feathers
+        ctx.fillStyle = '#fbbf24';
+        ctx.beginPath();
+        ctx.arc(tailPos.x, tailPos.y, Math.max(2.2, 4 * tailPos.scale), 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      function drawParticles() {
+        for (const p of state.particles) {
+          const sp = worldToScreen(p.x, p.y, p.z);
+          ctx.globalAlpha = Math.max(0, p.life / p.maxLife);
+          ctx.fillStyle = p.color;
+          ctx.beginPath();
+          ctx.arc(sp.x, sp.y, p.size * sp.scale * 1.4, 0, Math.PI * 2);
+          ctx.fill();
+        }
+        ctx.globalAlpha = 1;
+      }
+
+      function drawArcherAndCompositeBow() {
+        const pal = DEEL_PALETTES[state.deelColor];
+        const basePos = worldToScreen(-0.85, 0, 0);
+        const sc = Math.min(1.18, Math.max(0.75, viewH / 640));
+        const aimOffsetX = (state.aimYawDeg / Math.max(1, getMaxYawDeg())) * 22;
+        const pull = state.drawTension;
+
+        ctx.save();
+        ctx.translate(basePos.x, basePos.y);
+        ctx.scale(sc, sc);
+
+        // Ground shadow
+        ctx.fillStyle = 'rgba(0,0,0,0.28)';
+        ctx.beginPath();
+        ctx.ellipse(6, 2, 42, 10, 0, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Embroidered Gutal boots
+        ctx.fillStyle = '#451a03';
+        ctx.beginPath();
+        ctx.roundRect(-22, -26, 15, 26, 4);
+        ctx.roundRect(12, -26, 15, 26, 4);
+        ctx.fill();
+        ctx.beginPath();
+        ctx.ellipse(-25, -4, 9, 4.5, -0.35, 0, Math.PI * 2);
+        ctx.ellipse(29, -4, 9, 4.5, 0.35, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Deel coat (back-3/4 view facing downrange)
+        ctx.fillStyle = pal.main;
+        ctx.strokeStyle = pal.dark;
+        ctx.lineWidth = 2.5;
+        ctx.beginPath();
+        ctx.moveTo(-26, -112);
+        ctx.lineTo(26, -112);
+        ctx.lineTo(36, -20);
+        ctx.lineTo(-34, -20);
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+
+        // Gold ornamental collar & back trim
+        ctx.strokeStyle = pal.trim;
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.moveTo(-18, -110);
+        ctx.lineTo(0, -104);
+        ctx.lineTo(18, -110);
+        ctx.stroke();
+
+        // Silk sash
+        ctx.fillStyle = pal.sash;
+        ctx.fillRect(-29, -68, 58, 12);
+
+        // Quiver on hip with remaining arrows
+        ctx.fillStyle = '#78350f';
+        ctx.save();
+        ctx.translate(-28, -64);
+        ctx.rotate(-0.22);
+        ctx.fillRect(-6, 0, 12, 34);
+        for (let i = 0; i < state.arrowsLeft; i++) {
+          ctx.strokeStyle = '#fbbf24';
+          ctx.lineWidth = 2.2;
+          ctx.beginPath();
+          ctx.moveTo(-3 + i * 2.5, 0);
+          ctx.lineTo(-4 + i * 2.5, -14);
+          ctx.stroke();
+        }
+        ctx.restore();
+
+        // Bow Arm (extended forward/right toward target)
+        const bowHandX = 48 + aimOffsetX * 0.7;
+        const bowHandY = -98 - state.pitchDeg * 1.4;
+
+        ctx.strokeStyle = pal.main;
+        ctx.lineWidth = 14;
+        ctx.lineCap = 'round';
+        ctx.beginPath();
+        ctx.moveTo(20, -104);
+        ctx.lineTo(bowHandX, bowHandY);
+        ctx.stroke();
+
+        // Draw Arm (pulls string backward toward cheek)
+        const stringPullX = bowHandX - 10 - pull * 26;
+        const stringPullY = bowHandY + 4 + pull * 6;
+        ctx.beginPath();
+        ctx.moveTo(-20, -102);
+        ctx.lineTo(stringPullX, stringPullY);
+        ctx.stroke();
+
+        // Head & Malgai/Braids
+        ctx.fillStyle = '#fed7aa';
+        ctx.beginPath();
+        ctx.arc(0, -132, 18, 0, Math.PI * 2);
+        ctx.fill();
+
+        if (state.archerStyle === 'malgai') {
+          ctx.fillStyle = pal.dark;
+          ctx.beginPath();
+          ctx.ellipse(0, -146, 22, 6, 0, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.fillStyle = pal.main;
+          ctx.beginPath();
+          ctx.moveTo(-16, -146);
+          ctx.lineTo(0, -166);
+          ctx.lineTo(16, -146);
+          ctx.closePath();
+          ctx.fill();
+          ctx.fillStyle = '#fbbf24';
+          ctx.beginPath();
+          ctx.arc(0, -166, 4, 0, Math.PI * 2);
+          ctx.fill();
+        } else {
+          ctx.fillStyle = '#1e1b18';
+          ctx.beginPath();
+          ctx.arc(0, -135, 18.5, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.strokeStyle = '#1e1b18';
+          ctx.lineWidth = 6;
+          ctx.beginPath();
+          ctx.moveTo(-10, -124);
+          ctx.lineTo(-14, -92);
+          ctx.moveTo(10, -124);
+          ctx.lineTo(14, -92);
+          ctx.stroke();
+          ctx.fillStyle = pal.sash;
+          ctx.fillRect(-17, -96, 7, 7);
+          ctx.fillRect(10, -96, 7, 7);
+        }
+
+        // Traditional Composite Recurve Bow (Wood + Horn + Sinew + Curved Siyah Tips, NO SIGHTS!)
+        const flex = pull * 10;
+        const topTipX = bowHandX - 4 - flex;
+        const topTipY = bowHandY - 54 + flex * 0.4;
+        const botTipX = bowHandX - 4 - flex;
+        const botTipY = bowHandY + 54 - flex * 0.4;
+
+        // Bow limbs
+        ctx.strokeStyle = '#5c2808';
+        ctx.lineWidth = 5.5;
+        ctx.beginPath();
+        ctx.moveTo(topTipX, topTipY);
+        ctx.quadraticCurveTo(bowHandX + 12, bowHandY - 22, bowHandX, bowHandY);
+        ctx.quadraticCurveTo(bowHandX + 12, bowHandY + 22, botTipX, botTipY);
+        ctx.stroke();
+
+        // Horn belly highlight & bone siyah tips
+        ctx.strokeStyle = '#d97706';
+        ctx.lineWidth = 2.2;
+        ctx.beginPath();
+        ctx.moveTo(topTipX - 3, topTipY - 4);
+        ctx.lineTo(topTipX, topTipY);
+        ctx.moveTo(botTipX - 3, botTipY + 4);
+        ctx.lineTo(botTipX, botTipY);
+        ctx.stroke();
+
+        // Silk grip
+        ctx.strokeStyle = pal.sash;
+        ctx.lineWidth = 7;
+        ctx.beginPath();
+        ctx.moveTo(bowHandX, bowHandY - 7);
+        ctx.lineTo(bowHandX, bowHandY + 7);
+        ctx.stroke();
+
+        // Bowstring
+        ctx.strokeStyle = '#f8fafc';
+        ctx.lineWidth = 1.6;
+        ctx.beginPath();
+        ctx.moveTo(topTipX, topTipY);
+        ctx.lineTo(stringPullX, stringPullY);
+        ctx.lineTo(botTipX, botTipY);
+        ctx.stroke();
+
+        // Nocked arrow when ready
+        if (state.arrowsLeft > 0 && !state.activeArrow) {
+          const arrowTipX = bowHandX + 18 + aimOffsetX * 0.25;
+          const arrowTipY = bowHandY - 4 - state.pitchDeg * 0.8;
+          ctx.strokeStyle = '#92400e';
+          ctx.lineWidth = 3;
+          ctx.beginPath();
+          ctx.moveTo(stringPullX, stringPullY);
+          ctx.lineTo(arrowTipX, arrowTipY);
+          ctx.stroke();
+
+          ctx.fillStyle = '#334155';
+          ctx.beginPath();
+          ctx.arc(arrowTipX, arrowTipY, 3.2, 0, Math.PI * 2);
+          ctx.fill();
+        }
+
+        ctx.restore();
+      }
+
+      function drawDragTelemetryOverlay() {
+        if (!state.isDragging && !state.kbCharging) return;
+
+        // Clean tension & arc readout near the bow/pointer
+        if (state.isDragging) {
+          ctx.save();
+          // Anchor circle
+          ctx.strokeStyle = 'rgba(254, 243, 199, 0.85)';
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.arc(state.dragStartX, state.dragStartY, 16, 0, Math.PI * 2);
+          ctx.stroke();
+
+          // Pull line
+          ctx.setLineDash([5, 5]);
+          ctx.beginPath();
+          ctx.moveTo(state.dragStartX, state.dragStartY);
+          ctx.lineTo(state.dragCurrX, state.dragCurrY);
+          ctx.stroke();
+          ctx.setLineDash([]);
+
+          // Pointer handle
+          ctx.fillStyle = '#fbbf24';
+          ctx.beginPath();
+          ctx.arc(state.dragCurrX, state.dragCurrY, 8, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.restore();
+        }
+
+        // Crisp Power & Arc meter at bottom-left
+        const pct = Math.round(state.drawTension * 100);
+        const boxX = 18;
+        const boxY = viewH - 72;
+        ctx.save();
+        ctx.fillStyle = 'rgba(15, 23, 42, 0.82)';
+        ctx.beginPath();
+        ctx.roundRect(boxX, boxY, 210, 54, 12);
+        ctx.fill();
+
+        ctx.fillStyle = '#f8fafc';
+        ctx.font = '700 13px "Trebuchet MS", sans-serif';
+        ctx.fillText(`Draw Power: ${pct}%   ·   Arc: ${state.pitchDeg.toFixed(1)}°`, boxX + 12, boxY + 21);
+
+        // Bar track
+        ctx.fillStyle = 'rgba(255,255,255,0.2)';
+        ctx.beginPath();
+        ctx.roundRect(boxX + 12, boxY + 32, 186, 10, 5);
+        ctx.fill();
+
+        const barColor = pct > 85 ? '#ef4444' : pct > 55 ? '#fbbf24' : '#4ade80';
+        ctx.fillStyle = barColor;
+        ctx.beginPath();
+        ctx.roundRect(boxX + 12, boxY + 32, 186 * state.drawTension, 10, 5);
+        ctx.fill();
+        ctx.restore();
+      }
+
+      // ============================================================
+      // 10. MAIN 60FPS GAME LOOP
+      // ============================================================
+      let lastTime = performance.now();
+      function loop(now) {
+        const dt = Math.min(0.05, (now - lastTime) / 1000);
+        lastTime = now;
+        const timeSec = now / 1000;
+
+        updatePhysics(dt);
+
+        ctx.clearRect(0, 0, viewW, viewH);
+        drawSkyAndMountains(timeSec);
+        drawNaadamBackground(timeSec);
+        drawZurkhaiAndSurs();
+        drawUuchin(timeSec);
+        drawTrajectoryPreview();
+        drawStuckAndActiveArrows();
+        drawParticles();
+        drawArcherAndCompositeBow();
+        drawDragTelemetryOverlay();
+
+        requestAnimationFrame(loop);
+      }
+
+      // Initial render
+      drawAvatarPreview();
+      startNewGame(true);
+      requestAnimationFrame(loop);
+    })();
+  </script>
+</body>
+</html>
